@@ -11,6 +11,17 @@ namespace DSL
 		Head->next = Head;
 		Head->prior = Head;
 	}
+	template<typename type>
+	list<type>::list(std::initializer_list<type> ls):
+		length(0),
+		Head(new DNode<type>())
+	{
+		//set loop list
+		Head->next = Head;
+		Head->prior = Head;
+		for (auto it = ls.begin(); it != ls.end(); ++it)
+			push_back(*it);
+	}
 	//copy constructor
 	template<typename type>
 	list<type>::list(const list<type>& obj) :
@@ -37,23 +48,19 @@ namespace DSL
 	}
 	//add
 	template<typename type>
-	void list<type>::insert(size_t pos, type value)
+	void list<type>::insert(iterator pos, type value)
 	{
-		assert(pos <= length);
-		DNode<type>* pre_node = Head;
-		while (pos--)
-			pre_node = pre_node->next;
+		
+		DNode<type>* next_node = pos.ptr;
+		
 		DNode<type>* new_node 
-			= new DNode<type>(value,pre_node,pre_node->next);//malloc
-		pre_node->next->prior = new_node;
-		pre_node->next = new_node;
+			= new DNode<type>(value,next_node->prior,next_node);//malloc
+		
+		next_node->prior->next = new_node;
+		next_node->prior = new_node;
 		length++;
 	}
-	template<typename type>
-	void list<type>::push_back(type value)
-	{
-		insert(length, value);
-	}
+	
 
 	//delete
 	//清空链表
@@ -64,30 +71,76 @@ namespace DSL
 			list::listfreememory(Head->next, Head->prior);//释放除头结点外的所有节点
 		length = 0;//维护length
 	}
-	//find
-	//判空
+	//删除节点
 	template<typename type>
-	bool list<type>::empty() const
+	void list<type>::erase(iterator pos)
 	{
-		return 
-			Head->next == Head 
-			&&
-			Head->prior == Head;
+		assert(pos != end());
+		DNode<type>* node = pos.ptr;
+		node->prior->next = node->next;
+		node->next->prior = node->prior;
+		delete node;
+		length--;
 	}
-	//遍历访问
+	//algoritm
+	//翻转链表
 	template<typename type>
-	void list<type>::visit()const
+	void list<type>::reverse()
 	{
-		DNode<type>* node = Head->next;
-		while (node != Head)
+		DNode<type>* node = Head;
+		do
 		{
-			node->visit();
-			node = node->next;
+			DNode<type>* tmp = node->next;
+			node->next = node->prior;
+			node->prior = tmp;
+			node = node->prior;
+		} while (node != Head);
+	}
+
+
+	//operator over load
+	
+	template<typename type>
+	list<type>& list<type>::operator=(const list<type>& rhs)
+	{
+		if (this == &rhs)return *this;//自赋值处理
+		clear();//清空链表
+		for (auto it = rhs.begin(); it != rhs.end(); ++it)
+			push_back(it.ptr->val);
+		return *this;
+	}
+	//assert
+	template<typename type>
+	void list<type>::check()
+	{
+		if (length == 0)
+		{
+			assert(Head != nullptr);
+			assert(Head->next == Head);
+			assert(Head->prior == Head);
+		}
+		else
+		{
+			size_t n = 0;
+			for (DNode<type> *p = Head->next; p != Head; p=p->next)
+			{
+				assert(p->next->prior == p);
+				n++;
+				assert(n <= length);
+			}
+			assert(n == length);
+			n = 0;
+			for (DNode<type>* p = Head->prior; p != Head; p = p->prior)
+			{
+				assert(p->prior->next==p);
+				n++;
+				assert(n <= length);
+			}
+			assert(n == length);
+
 		}
 	}
-
-
-
+	//static
 	template<typename type>
 	void list<type>::listfreememory(DNode<type>* start,DNode<type>* end)
 	{
