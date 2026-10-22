@@ -111,7 +111,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="readme.txt" />
     <Text Include="need.txt" />
   </ItemGroup>
 </Project>
