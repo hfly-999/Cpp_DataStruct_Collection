@@ -48,7 +48,7 @@ namespace DSL
 	}
 	//add
 	template<typename type>
-	void list<type>::insert(iterator pos, type value)
+	void list<type>::insert(iterator pos,const type &value)
 	{
 		
 		DNode<type>* next_node = pos.ptr;
@@ -111,20 +111,25 @@ namespace DSL
 	}
 	//assert
 	template<typename type>
-	void list<type>::check()
+	void list<type>::check()const
 	{
+		assert(Head != nullptr);
+		assert(Head->next != nullptr);
+		assert(Head->prior != nullptr);
 		if (length == 0)
 		{
-			assert(Head != nullptr);
 			assert(Head->next == Head);
 			assert(Head->prior == Head);
+			
 		}
 		else
 		{
 			size_t n = 0;
 			for (DNode<type> *p = Head->next; p != Head; p=p->next)
 			{
-				assert(p->next->prior == p);
+				assert(p != nullptr);
+				assert(p->next->prior == p);//保证后面完整
+				assert(p->prior->next == p);//保证前面完整
 				n++;
 				assert(n <= length);
 			}
@@ -132,7 +137,7 @@ namespace DSL
 			n = 0;
 			for (DNode<type>* p = Head->prior; p != Head; p = p->prior)
 			{
-				assert(p->prior->next==p);
+				assert(p != nullptr);
 				n++;
 				assert(n <= length);
 			}
@@ -150,11 +155,11 @@ namespace DSL
 		while (start != end)
 		{
 			DNode<type>* next = start->next;
-			std::cout << start << " DNode\t" << start->val << "\thas been free\n";
+			//std::cout << start << " DNode\t" << start->val << "\thas been free\n";
 			delete start;
 			start = next;
 		}
-		std::cout << start << " DNode\t" << start->val << "\thas been free\n";
+		//std::cout << start << " DNode\t" << start->val << "\thas been free\n";
 		delete start;
 	}
 	

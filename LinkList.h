@@ -54,7 +54,7 @@ namespace DSL
 			friend class list;
 			iterator(DNode<type>* p = nullptr) :ptr(p) {}
 			//it1=it2 over load
-			iterator& operator=(iterator& rhs) { ptr = rhs.ptr; return *this; }
+			iterator& operator=(const iterator& rhs) { ptr = rhs.ptr; return *this; }
 			//*it over load
 			type& operator* ()const { return ptr->val; }
 			//it++
@@ -98,7 +98,7 @@ namespace DSL
 		
 
 		//add
-		void insert(iterator pos, type value);	//插入
+		void insert(iterator pos,const type& value);	//插入
 
 		//尾插 
 		void push_back(const type& value) { insert(end(), value); }
@@ -110,8 +110,8 @@ namespace DSL
 		//delete
 		void clear();							//清空链表
 		void erase(iterator pos);				//删除pos处的元素
-		void pop_back() { erase((--end())); }		//尾删
-		void pop_front() { erase(begin()); };	//头删
+		void pop_back() { erase((--end())); }	//尾删
+		void pop_front() { erase(begin()); }	//头删
 		//find
 		void visit()const						//遍历链表内容
 		{
@@ -129,7 +129,7 @@ namespace DSL
 		//operator over load
 		list& operator=(const list& rhs);		//=overload
 		//assert
-		void check();
+		void check()const;
 	private:
 		static void listfreememory(DNode<type>* start, DNode<type>* end);//释放链内存
 		size_t length;
