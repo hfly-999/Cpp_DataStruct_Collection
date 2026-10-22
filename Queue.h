@@ -1,7 +1,7 @@
 ﻿//#pragma once
 //
 //#include"SeqList.h"
-//#include"LinkList.h"
+//#include"list.h"
 //namespace DSL
 //{
 //	
@@ -27,7 +27,7 @@
 //		//拷贝赋值
 //		LQueue& operator=(const LQueue& that)=default;
 //	private:
-//		LinkList<type>L;
+//		list<type>L;
 //	};
 //#include"Queue.inl"
 //};

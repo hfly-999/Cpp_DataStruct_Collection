@@ -1,9 +1,9 @@
-﻿
-#include"LinkList.h"
+﻿#include"LinkList.h"
 
 
 int main()
 {
+
 	
-	
+	DSL::copyconstructTest();
 }

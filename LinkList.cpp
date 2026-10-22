@@ -1,112 +1,95 @@
 ﻿#include"LinkList.h"
 using namespace DSL;
+void DSL::insertTest()
+{
+	list<char> L;
+	L.insert(0, 'A');
+	L.insert(0, 'B');
+	L.insert(0, 'C');
+	L.insert(0, 'D');
+	L.insert(0, 'E');
+    L.push_back('F');
+    L.push_back('G');
+    L.visit();
+    //结果:
+/*  000001BFDB915C20 DNode : A
+        000001BFDB915500 DNode :
+        000001BFDB9158C0 DNode : B
+      000001BFDB9158C0 DNode : B
+        000001BFDB915C20 DNode : A
+        000001BFDB915020 DNode : C
+      000001BFDB915020 DNode : C
+        000001BFDB9158C0 DNode : B
+        000001BFDB915140 DNode : D
+      000001BFDB915140 DNode : D
+        000001BFDB915020 DNode : C
+        000001BFDB915F20 DNode : E
+      000001BFDB915F20 DNode : E
+        000001BFDB915140 DNode : D
+        000001BFDB915500 DNode :
+        000001BFDB915500 DNode          has been free
+        000001BFDB915C20 DNode  A       has been free
+        000001BFDB9158C0 DNode  B       has been free
+        000001BFDB915020 DNode  C       has been free
+        000001BFDB915140 DNode  D       has been free
+        000001BFDB915F20 DNode  E       has been free
+*/
+}
+void DSL::copyconstructTest()
+{
+    list<char> L;
+    L.push_back('A');
+    L.push_back('B');
+    L.push_back('C');
+    L.push_back('D');
+    L.push_back('E');
+    list<char>newL = L;
+    L.visit();
+    std::cout << "\n";
+    newL.visit();
+    //结果
+   /* 0000020D5C2F5380 DNode : A
+        0000020D5C2F6100 DNode :
+        0000020D5C2F5560 DNode : B
+      0000020D5C2F5560 DNode : B
+        0000020D5C2F5380 DNode : A
+        0000020D5C2F59E0 DNode : C
+      0000020D5C2F59E0 DNode : C
+        0000020D5C2F5560 DNode : B
+        0000020D5C2F5800 DNode : D
+      0000020D5C2F5800 DNode : D
+        0000020D5C2F59E0 DNode : C
+        0000020D5C2F5F80 DNode : E
+      0000020D5C2F5F80 DNode : E
+        0000020D5C2F5800 DNode : D
+        0000020D5C2F6100 DNode :
 
-//void LinkListHeadInsertTest()
-//{
-//	LinkList<double>L;
-//	L.HeadInsert(3.14);
-//	L.HeadInsert(2.718);
-//	L.HeadInsert(3.996);
-//	L.HeadInsert(4.111);
-//	L.HeadInsert(1024);
-//	L.HeadInsert(65536.8125);
-//	//L={65536.8125,1024,4.111,3.996,2.718,3.14};
-//	L.Visit();
-//}
-//void LinkListpush_backTest()
-//{
-//	LinkList<double>L;
-//	L.push_back(1.000);
-//	L.push_back(2.718);
-//	L.push_back(3.14159);
-//	L.push_back(6.666);
-//	L.push_back(9.999);
-//	L.push_back(65536.8125);
-//	//L={1.000,2.718,3.14159,6.666,9.999,65536.8125};
-//	L.Visit();
-//}
-//
-//void LinkListHeadDeleteTest()
-//{
-//	LinkList<double>L;
-//	L.push_back(1.000);
-//	L.push_back(2.718);
-//	L.push_back(3.14159);
-//	L.push_back(6.666);
-//	L.push_back(9.999);
-//	L.push_back(65536.8125);
-//	//L={1.000,2.718,3.14159,6.666,9.999,65536.8125};
-//	L.HeadDelete();
-//	L.HeadDelete();
-//
-//	//L={3.14159,6.666,9.999,65536.8125};
-//	L.Visit();
-//
-//
-//}
-//
-//void LinkListTailDeleteTest()
-//{
-//	LinkList<double>L;
-//	L.push_back(1.000);
-//	L.push_back(2.718);
-//	L.push_back(3.14159);
-//	L.push_back(6.666);
-//	L.push_back(9.999);
-//	L.push_back(65536.8125);
-//	//L={1.000,2.718,3.14159,6.666,9.999,65536.8125};
-//	L.TailDelete();
-//	L.TailDelete();
-//
-//	//L={1.000,2.718,3.14159,6.666};
-//	L.Visit();
-//}
-//void LinkListCopyConstructorTest()
-//{
-//	LinkList<double>L;
-//	L.push_back(1.000);
-//	L.push_back(2.718);
-//	L.push_back(3.14159);
-//	L.push_back(6.666);
-//	L.push_back(9.999);
-//	L.push_back(65536.8125);
-//	LinkList<double>newL = L;//拷贝构造函数测试
-//	L.Visit();
-//	newL.Visit();
-//}
-//void LinkListEqualTest()
-//{
-//	LinkList<double>L;
-//	L.push_back(1.000);
-//	L.push_back(2.718);
-//	L.push_back(3.14159);
-//	L.push_back(6.666);
-//	L.push_back(9.999);
-//	L.push_back(65536.8125);
-//	LinkList<double>newL;
-//	newL = L;//赋值拷贝测试
-//	L.Visit();
-//	newL.Visit();
-//}
-//
-//void LinkListIsEqualTest()
-//{
-//	LinkList<double>L;
-//	L.push_back(1.000);
-//	L.push_back(2.0);
-//	L.push_back(4.0);
-//	L.push_back(8.0);
-//	L.push_back(16.0);
-//	L.push_back(32.0);
-//	LinkList<double>NewL;
-//	NewL.push_back(1.000);
-//	NewL.push_back(2.0);
-//	NewL.push_back(4.0);
-//	NewL.push_back(8.0);
-//	NewL.push_back(16.0);
-//	NewL.push_back(32.0);
-//	if (NewL == L)
-//		std::cout << "equal\n";
-//	else std::cout << "unequal\n";
-//	//"equal"
-//}
+      0000020D5C2F5B60 DNode : A
+        0000020D5C2F5F20 DNode :
+        0000020D5C2F5FE0 DNode : B
+      0000020D5C2F5FE0 DNode : B
+        0000020D5C2F5B60 DNode : A
+        0000020D5C2F6040 DNode : C
+      0000020D5C2F6040 DNode : C
+        0000020D5C2F5FE0 DNode : B
+        0000020D5C2F6160 DNode : D
+      0000020D5C2F6160 DNode : D
+        0000020D5C2F6040 DNode : C
+        0000020D5C2F5860 DNode : E
+      0000020D5C2F5860 DNode : E
+        0000020D5C2F6160 DNode : D
+        0000020D5C2F5F20 DNode :
+        0000020D5C2F5F20 DNode          has been free
+        0000020D5C2F5B60 DNode  A       has been free
+        0000020D5C2F5FE0 DNode  B       has been free
+        0000020D5C2F6040 DNode  C       has been free
+        0000020D5C2F6160 DNode  D       has been free
+        0000020D5C2F5860 DNode  E       has been free
+        0000020D5C2F6100 DNode          has been free
+        0000020D5C2F5380 DNode  A       has been free
+        0000020D5C2F5560 DNode  B       has been free
+        0000020D5C2F59E0 DNode  C       has been free
+        0000020D5C2F5800 DNode  D       has been free
+        0000020D5C2F5F80 DNode  E       has been free
+        */
+}

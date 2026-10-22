@@ -1,6 +1,6 @@
 ﻿//#pragma once
 //#include"SeqList.h"
-//#include"LinkList.h"
+//#include"list.h"
 //namespace DSL
 //{
 //	/*---------------------------------------------------------------*/
@@ -55,7 +55,7 @@
 //		bool empty()const;
 //		type GetTop()const;//获取栈顶元素
 //	private:
-//		LinkList<type>L;
+//		list<type>L;
 //	};
 //	/*---------------------------------------------------------------*/
 //}

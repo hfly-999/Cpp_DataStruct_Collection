@@ -6,67 +6,80 @@
 namespace DSL
 {
 	template<typename type>
-	class LinkList;
+	class list;
 	
 	//链表节点
 	template<typename type>
-	class LNode
+	class DNode
 	{
 	public:
 		//构造
-		LNode(type value = type{}) :
-			value(value),
-			next(nullptr){};
+		DNode(
+			type value = type{},
+			DNode<type>* prior = nullptr,
+			DNode<type>* next = nullptr
+		) :
+			val(value),
+			prior(prior),
+			next(next)
+			{};
 		//拷贝构造
-		LNode(const LNode& obj) :
-			value(obj.value),
-			next(nullptr){}
-		~LNode()=default;
+		DNode(const DNode& obj) :
+			val(obj.val),
+			prior(nullptr),
+			next(nullptr){};
+		//析构
+		~DNode() = default;
+		//visit
+		void visit()
+		{
+			std::cout << this << " DNode:" << val << std::endl;
 
-		friend class LinkList<type>;
+			std::cout << "\t" << prior <<" DNode:" << prior->val << std::endl;
 
+			std::cout << "\t" << next <<" DNode:" << next->val << std::endl;
+		}
+		friend class list<type>;
 	private:
-		type value;
-		LNode* next;
+	
+		type val;
+		DNode* prior;
+		DNode* next;
+		
 	};
 
 };
 namespace DSL
 {
-	//链表
+	//带节点的双向循环链表链表
 	template<typename type>
-	class LinkList
+	class list
 	{
 	public:
 		//constructor/copy constructor/desconstructor
-		LinkList();							//无参构造
-		LinkList(const LinkList& obj);		//拷贝构造
-		virtual ~LinkList();				//无参析构
-		//operator over load
-		LinkList& operator=(const LinkList& that);//=运算符重载
+		list();							//无参构造
+		list(const list& obj);			//拷贝构造
+		virtual ~list();				//无参析构
+
 		//add
-		void HeadInsert(type element);		//头插
-		void push_back(type element);		//尾插
-		////delete
-		//type HeadDelete();					//头删
-		//type TailDelete();					//尾删
-		
-		////change
-		////find
-		//void Visit() const;				    //访问链表
-		bool empty() const;					//链表是否为空
-		//type GetFirstNodeValue()const;		//获取链表首节点元素值
-		//size_t GetLength() const;			//获取链表长度
-
-		
-
+		void insert(size_t pos, type value);
+		void push_back(type value);
+		//delete
+		void clear();//清空链表
+		//find
+		bool empty() const;					//链表是否为空	
+		void visit()const;					//遍历链表内容
 	private:
-		static void LinkMemoryfree(LNode<type>* node);
-		LNode<type>* Head;
-		LNode<type>* Tail;
+		static void listfreememory(DNode<type>* start, DNode<type>* end);//释放链内存
+		
+		size_t length;
+		DNode<type>* Head;
 	};
-	
+	void insertTest();
+	void copyconstructTest();
 }
+
+
 
 
 
@@ -76,16 +89,3 @@ namespace DSL
 
 
 
-void LinkListHeadInsertTest();
-
-void LinkListpush_backTest();
-
-void LinkListHeadDeleteTest();
-
-void LinkListTailDeleteTest();
-
-void LinkListCopyConstructorTest();//拷贝构造函数测试
-
-void LinkListEqualTest();
-
-void LinkListIsEqualTest();

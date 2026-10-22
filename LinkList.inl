@@ -1,100 +1,108 @@
-﻿
+﻿#include"LinkList.h"
 namespace DSL
 {
-	//传入链的第一个节点,释放整条链占用的内存
+	//constructor
 	template<typename type>
-	void LinkList<type>::LinkMemoryfree(LNode<type>* node)
+	list<type>::list() :
+		length(0),
+		Head(new DNode<type>())
 	{
-		while (node)
-		{
-			LNode<type>* pre = node;
-			node = node->next;
-			delete pre;
-		}//依次释放链表节点
+		//set loop list
+		Head->next = Head;
+		Head->prior = Head;
 	}
+	//copy constructor
 	template<typename type>
-	LinkList<type>::LinkList() :
-		Head(new LNode<type>()),
-		Tail(Head)
+	list<type>::list(const list<type>& obj) :
+		length(0),
+		Head(new DNode<type>())//申请头结点内存
 	{
-	}
-	template<typename type>
-	LinkList<type>::LinkList(const LinkList<type>& obj) :
-		Head(new LNode<type>()),
-		Tail(Head)
-	{
-		LNode<type>* obj_node = obj.Head->next;
-		while (obj_node)
+		//set loop list
+		Head->next = Head;
+		Head->prior = Head;
+		DNode<type>* obj_node = obj.Head->next;
+		while (obj_node != obj.Head)
 		{
-			Tail->next = new LNode<type>(obj_node->value);
-			Tail = Tail->next;
+			push_back(obj_node->val);
 			obj_node = obj_node->next;
 		}
 	}
+	//deconstructor
 	template<typename type>
-	LinkList<type>::~LinkList()
+	list<type>::~list()
 	{
-		LinkMemoryfree(Head);
+		//free Link memory
+		if(!empty())
+			list::listfreememory(Head,Head->prior);
+	}
+	//add
+	template<typename type>
+	void list<type>::insert(size_t pos, type value)
+	{
+		assert(pos <= length);
+		DNode<type>* pre_node = Head;
+		while (pos--)
+			pre_node = pre_node->next;
+		DNode<type>* new_node 
+			= new DNode<type>(value,pre_node,pre_node->next);//malloc
+		pre_node->next->prior = new_node;
+		pre_node->next = new_node;
+		length++;
 	}
 	template<typename type>
-	LinkList<type>& LinkList<type>::operator=(const LinkList<type>& rhs)
+	void list<type>::push_back(type value)
 	{
-		assert(!this == &rhs);
-		LinkList<type>::LinkMemoryfree(Head->next);
-		Tail = Head;
-		LNode<type>* rhs_node = rhs.Head->next;
-		while (rhs_node)
-		{
-			Tail->next = new LNode<type>(rhs_node->value);
-			Tail = Tail->next;
-			rhs_node = rhs_node->next;
-		}
-		return *this;
+		insert(length, value);
 	}
 
+	//delete
+	//清空链表
 	template<typename type>
-	void LinkList<type>::HeadInsert(type element)
+	void list<type>::clear()
 	{
-		LNode<type>* new_node = new LNode<type>(element);
-		if (empty())//链表为空
+		if (!empty())
+			list::listfreememory(Head->next, Head->prior);//释放除头结点外的所有节点
+		length = 0;//维护length
+	}
+	//find
+	//判空
+	template<typename type>
+	bool list<type>::empty() const
+	{
+		return 
+			Head->next == Head 
+			&&
+			Head->prior == Head;
+	}
+	//遍历访问
+	template<typename type>
+	void list<type>::visit()const
+	{
+		DNode<type>* node = Head->next;
+		while (node != Head)
 		{
-			Head->next = new_node;
-			Tail = new_node;
-		}
-		else//链表非空
-		{
-			new_node->next = Head->next;
-			Head->next = new_node;
+			node->visit();
+			node = node->next;
 		}
 	}
+
+
+
 	template<typename type>
-	void LinkList<type>::push_back(type element)
+	void list<type>::listfreememory(DNode<type>* start,DNode<type>* end)
 	{
-		LNode<type>* new_node = new LNode<type>(element);
-		if (empty())//链表为空
+		assert(start != nullptr && end != nullptr);
+		start->prior->next = end->next;
+		end->next->prior = start->prior;
+		while (start != end)
 		{
-			Head->next = new_node;
-			Tail = new_node;
+			DNode<type>* next = start->next;
+			std::cout << start << " DNode\t" << start->val << "\thas been free\n";
+			delete start;
+			start = next;
 		}
-		else//链表非空
-		{
-			new_node->next = Tail->next;
-			Tail->next = new_node;
-			Tail = Tail->next;
-		}
-	}
-	template<typename type>
-	bool LinkList<type>::empty()const
-	{
-		return Head == Tail;//头指针和尾指针指向头结点时候为空
+		std::cout << start << " DNode\t" << start->val << "\thas been free\n";
+		delete start;
 	}
 	
-}
-
-
-
-
-
-
-
-
+};
