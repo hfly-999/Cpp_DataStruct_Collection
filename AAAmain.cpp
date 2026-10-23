@@ -7,8 +7,8 @@ using namespace DSL;
 
 int main()
 {
-	DSL::vector<int>v = {1,2,3,4};
-	std::vector<int>v2 = { 1,2,3,4 };
+	DSL::vector<std::string>v = { "hello world","tst","yes" };
+	std::cout << v[0];
 	
 
 }
