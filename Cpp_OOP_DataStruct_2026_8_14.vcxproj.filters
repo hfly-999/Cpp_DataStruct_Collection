@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="头文件\LinkList">
-      <UniqueIdentifier>{6cc73c29-b507-4dee-9dd1-b2b7e8f8b9f6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="头文件\SeqList">
-      <UniqueIdentifier>{b97f9b5a-ba3a-4aab-b7f6-6593bff58085}</UniqueIdentifier>
-    </Filter>
     <Filter Include="头文件\String">
       <UniqueIdentifier>{2d20d8a5-4761-4708-a916-4b60b7a1ee6e}</UniqueIdentifier>
     </Filter>
@@ -34,6 +28,12 @@
     <Filter Include="头文件\Tree">
       <UniqueIdentifier>{0ab51e09-a299-4f32-a75b-54157aaeacf5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\list">
+      <UniqueIdentifier>{6cc73c29-b507-4dee-9dd1-b2b7e8f8b9f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\vector">
+      <UniqueIdentifier>{b97f9b5a-ba3a-4aab-b7f6-6593bff58085}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include.h">
@@ -42,11 +42,11 @@
     <ClInclude Include="Define.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="LinkList.h">
-      <Filter>头文件\LinkList</Filter>
+    <ClInclude Include="mylist.h">
+      <Filter>头文件\list</Filter>
     </ClInclude>
-    <ClInclude Include="SeqList.h">
-      <Filter>头文件\SeqList</Filter>
+    <ClInclude Include="myvector.h">
+      <Filter>头文件\vector</Filter>
     </ClInclude>
     <ClInclude Include="String.h">
       <Filter>头文件\String</Filter>
@@ -65,11 +65,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="LinkList.inl">
-      <Filter>头文件\LinkList</Filter>
-    </None>
-    <None Include="SeqList.inl">
-      <Filter>头文件\SeqList</Filter>
+    <None Include="mylist.inl">
+      <Filter>头文件\list</Filter>
     </None>
     <None Include="String.inl">
       <Filter>头文件\String</Filter>
@@ -77,19 +74,16 @@
     <None Include="Queue.inl">
       <Filter>头文件\Queue</Filter>
     </None>
-    <None Include="Stack.inl">
-      <Filter>头文件\Stack</Filter>
-    </None>
     <None Include="Tree.inl">
       <Filter>头文件\Tree</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="LinkList.cpp">
-      <Filter>头文件\LinkList</Filter>
+    <ClCompile Include="mylist.cpp">
+      <Filter>头文件\list</Filter>
     </ClCompile>
-    <ClCompile Include="SeqList.cpp">
-      <Filter>头文件\SeqList</Filter>
+    <ClCompile Include="myvector.cpp">
+      <Filter>头文件\vector</Filter>
     </ClCompile>
     <ClCompile Include="String.cpp">
       <Filter>头文件\String</Filter>

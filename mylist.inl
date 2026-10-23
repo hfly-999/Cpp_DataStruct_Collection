@@ -1,4 +1,4 @@
-﻿#include"LinkList.h"
+﻿#include"mylist.h"
 namespace DSL
 {
 	//constructor

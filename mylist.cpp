@@ -1,4 +1,4 @@
-﻿#include"LinkList.h"
+﻿#include"mylist.h"
 using namespace DSL;
 
 void DSL::insertTest()
