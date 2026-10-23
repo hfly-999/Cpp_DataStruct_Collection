@@ -16,7 +16,7 @@
 | 模块 | 文件 | 状态 |
 | --- | --- | --- |
 | 单链表 `list` | `mylist.h` / `.inl` / `.cpp` | ✅ **可用**：双向循环 + 单哨兵；构造 / `initializer_list` 构造 / 拷贝构造 / 拷贝赋值 / 析构；`insert` / `erase` / `push_front` / `push_back` / `pop_front` / `pop_back` / `clear` / `front` / `back` / `size` / `empty` / `reverse`；嵌套迭代器；`check()` 不变量自检 |
-| 顺序表 `vector` | `myvector.h` / `.cpp` | 🚧 **开发中**：已完成原始内存分配（`::operator new` + placement new）、`initializer_list` 构造、析构、1.5 倍扩容；`insert` / `erase` / 拷贝语义 / 迭代器尚未实现 |
+| 顺序表 `vector` | `myvector.h` / `.cpp` | 🚧 **可用但待打磨**：原始内存分配（`::operator new` + placement new）、默认 / `initializer_list` / 拷贝构造、拷贝赋值；`insert`（任意位置，容量不足自动扩容）/ `push_back` / `push_front` / `clear` / `operator[]` / `front` / `back` / `size` / `capacity` / `empty` / `begin` / `end`；`erase` / `pop_back` / `reserve` 与 `const` 重载尚缺 |
 | 字符串 `String` | `String.h` / `.cpp` | ✅ 已实现：BF 与 KMP 子串匹配（含 `next` / `nextval` 数组） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
 | 顺序栈 / 链栈 | `Stack.h` / `.inl` / `.cpp` | ⏸ 已实现，随底层接口重构暂时注释 |
@@ -37,7 +37,18 @@
 - 用 `::operator new` **只申请字节，不构造任何对象**
 - 元素用 placement new 在指定地址上构造；析构时逐个显式调用 `~type()`
 - `[0, size)` 是活对象，`[size, capacity)` 是未构造的原始内存 —— **这是 `size` 与 `capacity` 能分开的根本原因**
-- 扩容时按 1.5 倍增长
+- 扩容时按 1.5 倍增长（`calcapacity`，下限为 2）
+- 所有插入都走同一个 `insert`：先用 `pos - Data` 算出下标（**必须在扩容之前算** —— 扩容会换掉 `Data`），再按需扩容，然后把 `[pos, size)` 从后往前整体后移一格，最后在 `pos` 处构造新元素
+
+## 待改进
+
+`vector` 目前已知的几处问题，按优先级排列：
+
+- `operator=` 缺自赋值保护，`v = v` 会把自己清空
+- `insert(pos, v[k])`：当被插入的值引用的是本容器中**位于插入点之后**的元素时，移位过程会先析构该元素，导致插入错误数据（静默错误，不崩溃）
+- `begin` / `end` 的 `const` 版本返回非 `const` 指针，`const` 对象可被修改
+- `operator[]` / `front` / `back` 缺 `const` 重载，`front` / `back` 按值返回
+- `~vector()` 无需 `virtual`
 
 ## 目录约定
 
@@ -47,7 +58,8 @@
 
 ## 下一步
 
-- `vector`：补默认构造、拷贝构造与拷贝赋值（规则三）、`begin` / `end`、`operator[]`、`insert` / `erase`
+- `vector`：修「待改进」里列出的几项（自赋值保护、`insert` 自引用、`const` 重载等），合计不到 15 行
+- `vector`：补 `erase` / `pop_back` / `reserve` / `resize`
 - `vector`：学习并接入移动语义（`noexcept` 移动构造、`std::move_if_noexcept`）
 - 取消 `Stack` / `Queue` / `Tree` 的注释，改为基于新的 `list` 实现
 
