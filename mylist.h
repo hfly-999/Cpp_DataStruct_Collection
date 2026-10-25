@@ -56,7 +56,7 @@ namespace DSL
 			//it1=it2 over load
 			iterator& operator=(const iterator& rhs) { ptr = rhs.ptr; return *this; }
 			//*it over load
-			type& operator* ()const { return ptr->val; }
+			type& operator* (){ return ptr->val; }
 			//it++
 			iterator operator++(int)
 			{
@@ -89,6 +89,51 @@ namespace DSL
 			bool operator!=(const iterator& rhs)const { return !(*this == rhs); }
 
 		};
+		//const list&容器的迭代器
+		class const_iterator
+		{
+			DNode<type>* ptr;
+		public:
+			friend class list;
+			const_iterator(DNode<type>* p=nullptr) :ptr(p) {}
+			//it=it
+			const_iterator& operator=(const const_iterator& rhs) { ptr = rhs.ptr; return *this; }
+			//*it
+			const type& operator*() { return ptr->val; }
+			//++it
+			const_iterator& operator++()
+			{
+				ptr = ptr->next;
+				return *this;
+			}
+			//it++
+			const_iterator operator++(int)
+			{
+				const_iterator old = ptr;
+				ptr = ptr->next;
+				return old;
+			}
+			//--it
+			const_iterator& operator--()
+			{
+				ptr = ptr->prior;
+				return *this;
+			}
+			//it--
+			const_iterator operator--(int)
+			{
+				const_iterator old = ptr;
+				ptr = ptr->prior;
+				return old;
+			}
+			//it==it
+			bool operator==(const const_iterator& rhs) const{ return ptr == rhs.ptr; }
+			//it!=it
+			bool operator!=(const const_iterator& rhs) const{ return !(*this == rhs); };
+		};
+
+		//const list&容器的迭代器
+	
 		//constructor/copy constructor/desconstructor
 		list();									//无参构造
 		list(std::initializer_list<type> ls);	//有初始化参数列表的构造
@@ -109,7 +154,7 @@ namespace DSL
 
 		//delete
 		void clear();							//清空链表
-		void erase(iterator pos);				//删除pos处的元素
+		void erase(iterator pos);				//删除pos处的元素	
 		void pop_back() { erase((--end())); }	//尾删
 		void pop_front() { erase(begin()); }	//头删
 		//find
@@ -120,10 +165,12 @@ namespace DSL
 		}
 		bool empty() const { return !length; }									//链表是否为空	
 		size_t size()const { return length; }									//获取链表长度
-		iterator begin()const { return iterator(Head->next); }					//获取开始迭代器
-		iterator end()const { return iterator(Head); }							//获取尾部迭代器
-		const type& front()const { assert(!empty()); return Head->next->val; }	//返回链表第一个元素
-		const type& back()const { assert(!empty()); return Head->prior->val; }	//返回链表最后一个元素
+		iterator begin(){ return iterator(Head->next); }						//获取开始迭代器
+		const_iterator begin()const { return const_iterator(Head->next); }		//获取开始迭代器const
+		iterator end(){ return iterator(Head); }								//获取尾部迭代器
+		const_iterator end()const { return const_iterator(Head); }				//获取尾部迭代器const
+		type front()const { assert(!empty()); return Head->next->val; }			//返回链表第一个元素
+		type back()const { assert(!empty()); return Head->prior->val; }			//返回链表最后一个元素
 		//algorithm
 		void reverse();//翻转链表
 		//operator over load

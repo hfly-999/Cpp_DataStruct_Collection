@@ -15,8 +15,8 @@
 
 | 模块 | 文件 | 状态 |
 | --- | --- | --- |
-| 单链表 `list` | `mylist.h` / `.inl` / `.cpp` | ✅ **可用**：双向循环 + 单哨兵；构造 / `initializer_list` 构造 / 拷贝构造 / 拷贝赋值 / 析构；`insert` / `erase` / `push_front` / `push_back` / `pop_front` / `pop_back` / `clear` / `front` / `back` / `size` / `empty` / `reverse`；嵌套迭代器；`check()` 不变量自检 |
-| 顺序表 `vector` | `myvector.h` / `.cpp` | 🚧 **可用但待打磨**：原始内存分配（`::operator new` + placement new）、默认 / `initializer_list` / 拷贝构造、拷贝赋值；`insert`（任意位置，容量不足自动扩容）/ `push_back` / `push_front` / `clear` / `operator[]` / `front` / `back` / `size` / `capacity` / `empty` / `begin` / `end`；`erase` / `pop_back` / `reserve` 与 `const` 重载尚缺 |
+| 单链表 `list` | `mylist.h` / `.inl` / `.cpp` | ✅ **可用**：双向循环 + 单哨兵；构造 / `initializer_list` 构造 / 拷贝构造 / 拷贝赋值 / 析构；`insert` / `erase` / `push_front` / `push_back` / `pop_front` / `pop_back` / `clear` / `front` / `back` / `size` / `empty` / `reverse`；**`iterator` + `const_iterator` 两套迭代器**；`check()` 不变量自检 |
+| 顺序表 `vector` | `myvector.h` / `.cpp` | 🚧 **可用但待打磨**：原始内存分配（`::operator new` + placement new）、默认 / `initializer_list` / 拷贝构造、拷贝赋值（含自赋值保护）；`insert`（任意位置，容量不足自动扩容）/ `push_back` / `push_front` / `clear` / `operator[]`（const + 非 const）/ `front` / `back` / `size` / `capacity` / `empty` / `begin` / `end`（各两个版本）；`erase` / `pop_back` / `reserve` 尚缺 |
 | 字符串 `String` | `String.h` / `.cpp` | ✅ 已实现：BF 与 KMP 子串匹配（含 `next` / `nextval` 数组） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
 | 顺序栈 / 链栈 | `Stack.h` / `.inl` / `.cpp` | ⏸ 已实现，随底层接口重构暂时注释 |
@@ -30,6 +30,7 @@
 - 只有一个哨兵节点 `Head`，空表时自指：`Head->next == Head->prior == Head`
 - `Head->next` 是首元素，`Head->prior` 是尾元素
 - 因此「插入」只有一种情况 —— 在某个节点**之前**插入，不需要为首尾写任何特例
+- `iterator` 与 `const_iterator` 是两个独立的类，内部都持 `DNode<type>*`，唯一区别是 `operator*` 的返回类型：`type&` 与 `const type&`。同一个节点因此可以用两种权限访问，越权写在编译期就会被挡住
 - `check()` 在 Debug 下校验三件事：节点数与 `length` 一致、双向指针互相一致、环闭合
 
 ### `vector`：原始内存 + placement new
@@ -42,13 +43,21 @@
 
 ## 待改进
 
-`vector` 目前已知的几处问题，按优先级排列：
+按模块列出尚未做完的部分。
 
-- `operator=` 缺自赋值保护，`v = v` 会把自己清空
+### `vector`
+
 - `insert(pos, v[k])`：当被插入的值引用的是本容器中**位于插入点之后**的元素时，移位过程会先析构该元素，导致插入错误数据（静默错误，不崩溃）
-- `begin` / `end` 的 `const` 版本返回非 `const` 指针，`const` 对象可被修改
-- `operator[]` / `front` / `back` 缺 `const` 重载，`front` / `back` 按值返回
+- `front` / `back` 按值返回，且只有 `const` 版本
+- 缺 `erase` / `pop_back` / `reserve`
 - `~vector()` 无需 `virtual`
+
+### `list`
+
+- 两个迭代器的 `operator*` 都缺 `const`，导致 `const iterator it` 无法解引用
+- `front` / `back` 只有 `const` 版本，非 `const` 对象无法通过它们修改元素
+- `const_iterator` 构造缺默认参数，`const_iterator ci;` 无法编译
+- `const_iterator::operator--()` 返回的是值而非引用
 
 ## 目录约定
 
@@ -58,9 +67,10 @@
 
 ## 下一步
 
-- `vector`：修「待改进」里列出的几项（自赋值保护、`insert` 自引用、`const` 重载等），合计不到 15 行
-- `vector`：补 `erase` / `pop_back` / `reserve` / `resize`
-- `vector`：学习并接入移动语义（`noexcept` 移动构造、`std::move_if_noexcept`）
+- `list`：补上面列出的四处打磨（`operator*` 的 `const`、`front` / `back` 的非 const 版本等），合计不到 10 行
+- `vector`：补 `erase` / `pop_back` / `reserve`，并把 `reallocate` 抽成带参数的 `reallocate_to`
+- `vector`：修 `insert` 自引用，把 `front` / `back` 改成返回引用
+- 学习并接入移动语义（`noexcept` 移动构造、`std::move_if_noexcept`）
 - 取消 `Stack` / `Queue` / `Tree` 的注释，改为基于新的 `list` 实现
 
 ## 开发记录

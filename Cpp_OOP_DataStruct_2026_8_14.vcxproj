@@ -216,6 +216,7 @@
     <None Include="Tree.inl" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="CHANGELOG.txt" />
     <Text Include="need.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

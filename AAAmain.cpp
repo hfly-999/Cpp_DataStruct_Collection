@@ -7,8 +7,11 @@ using namespace DSL;
 
 int main()
 {
-	DSL::vector<std::string>v = { "hello world","tst","yes" };
-	std::cout << v[0];
-	
+	vector<int>v = { 1,2,3,4,5 };
+	const vector<int>& rv = v;
 
+	for (auto it = rv.begin(); it != rv.end(); ++it)
+	{
+		std::cout << *it<<"\n";
+	}
 }

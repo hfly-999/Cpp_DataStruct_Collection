@@ -17,7 +17,8 @@ namespace DSL
 			Size(0),
 			Capacity(0),
 			Data(nullptr)
-		{}
+		{
+		}
 		//初始化参数列表,构造
 		vector(const std::initializer_list<type> ls) :
 			Size(0),
@@ -28,7 +29,7 @@ namespace DSL
 			{
 				push_back(*it);
 			}
-				
+
 		}
 		//拷贝构造
 		vector(const vector& obj) :
@@ -57,6 +58,7 @@ namespace DSL
 		//over load
 		vector& operator=(const vector& rhs)
 		{
+			if (this == &rhs)return *this;
 			clear();//清空数组元素
 			for (auto it = rhs.begin(); it != rhs.end(); ++it)
 			{
@@ -71,12 +73,19 @@ namespace DSL
 		{
 			assert(index < Size);
 			return Data[index];
-		}
-	
+		}//可以修改的版本
+		const type& operator[](size_t index)const
+		{
+			assert(index < Size);
+			return Data[index];
+		}//不可以修改的版本
 
 		//获取迭代器
-		type* begin()const { return Data; }
-		type* end()const { return Data + Size; }
+		type* begin(){ return Data; }//允许修改的版本
+		const type* begin()const { return Data; }//不允许修改的版本
+
+		type* end() { return Data + Size; }
+		const type* end()const { return Data + Size; }//不允许修改的版本
 
 
 		//insert
