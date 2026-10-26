@@ -1,17 +1,22 @@
-﻿#pragma once
-//#define INT_MAX 0x7FFFFFFF//整形最大值
-//#define INT_MIN 0x80000000//整形最小值
-#define ARRAY_DEFAULT_SIZE 65536 //默认数组大小
+#pragma once
+#pragma warning(disable: 26498)
+#include<iostream>
+#include<stdlib.h>
+using namespace std;
 
-#define SEQLIST_DEFAULT_SIZE 65536//默认顺序表大小
+#define DEFAULT_STACK_SIZE 256
+#define DEFAULT_QUEUE_SIZE 256
+#define DEFAULT_HEAP_SIZE  256
+#define DEFAULT_VERTEX_SIZE 16
+#define DEFAULT_BLOCK_SIZE 256
+#define DEFAULT_SQLIST_SIZE 256
+#define DEFAULT_MAX_NODE_SIZE 256
+#define DEFAULT_MAX_INT 0X7FFFFFFF
+#define DEFAULT_MAX_SHORT 0X00007FFF
+#define DEFAULT_POINTER_SIZE sizeof(void*)
+typedef int ElemType;
+typedef char VertexType;
 
-#define STACK_DEFAULT_SIZE 65536//默认栈大小
 
-#define QUEUE_DEFAULT_SIZE 65536//默认队列大小
 
-#define ERROR 0xFFFFFFFF//错误
-
-#define VOID 0x00000000//空
-
-namespace DSL {};//DataStructLibrary数据结构的命名空间
-
+namespace DSL {};//DataStructLibrary

@@ -1,201 +1,85 @@
-﻿#include"String.h"
+#include"String.h"
 
-namespace DSL
+unsigned int Strlen(const char* str)
 {
-	void BFTest1()
-	{
-		String str = "I LOVE THE WORLD.SO,I WANT TO DEVOTE MYSELF TO THE WORLD";  
-
-		String son = "WANT";
-		std::cout<<str.BF(son)<<"\n";
-		//23
-	}
-	void KMPTest1()
-	{
-		String str = "I LOVE THE WORLD.SO,I WANT TO DEVOTE MYSELF TO THE WORLD";
-		String son = "WANT";
-		std::cout << str.KMP(son) << "\n";
-		//23
-	}
+	unsigned long long ret = 0;
+	while (str[ret])ret++;
+	return ret;
 }
 
-
-namespace DSL
+unsigned int BF(const char* pattern, const char* son)
 {
-	/*String::String():
-		size(0),
-		capacity((size_t)(size + size / 2) + 1),
-		Data(new char[capacity])
+	unsigned long long i = 0;
+	while (pattern[i])
 	{
-		Data[size] = '\0';
-	}*/
-	String::String(const char* str) :
-		size(strlen(str)),
-		capacity((size_t)(size + size / 2) + 1),
-		Data(new char[capacity])
-	{
-		strcopy(Data, str);
-		Data[size] = '\0';
-	}
-	String::String(const std::string& str) :
-		size(str.size()),
-		capacity((size_t)(size + size / 2) + 1),
-		Data(new char[capacity])
-	{
-		
-		strcopy(Data, str);
-		Data[size] = '\0';
-	}
-	String::String(const String& obj) :
-		size(obj.size),
-		capacity(obj.capacity),
-		Data(new char[capacity])
-	{
-	
-		strcopy(Data, (const char*)obj.Data);
-		Data[size] = '\0';
-	}
-	String::~String()
-	{
-		delete[] Data;
-	}
-	//获取字符串的next数组
-	size_t* String::Getnext()const
-	{
-		size_t i = 0;
-		size_t count = 0;//最小公共前后缀
-		size_t* next = new size_t[size];
-		next[i++] = 0;
-		while (i < size)
+		unsigned long long tag = i;//记录pattern对比的起始位置
+		unsigned long long j = 0;
+		while (pattern[tag]==son[j])
 		{
-			if (Data[i] == Data[count])
-				next[i++] = ++count;
-			else if (count == 0)
-				next[i++] = count;
-			else count = next[count - 1];
-		}//PM
-		for (i = size - 1; i > 0; i--)
-			next[i] = next[i - 1];
-
-		//print
-		//for (i = 0; i < size; i++)
-		//	std::cout << next[i] << " ";
-		//std::cout <<std:: endl;
-
-		return next;
+			tag++;
+			j++;
+			if (son[j] == '\0')return i + 1;
+		}
+		i++;
+			
 	}
-	size_t* String::Getnextval()const
+	return 0;//没找到
+
+}
+
+unsigned int KMP(const char* pattern, const char* son)
+{
+	unsigned int i = 0;
+	unsigned int j = 0;
+	unsigned int sonlen = Strlen(son);
+	unsigned int* PM = (unsigned int*)malloc(sonlen * sizeof(int));
+	unsigned int* next = (unsigned int*)malloc(sonlen * sizeof(int));
+	if (PM == nullptr||next==nullptr)return 0;
+	PM[0] = 0;
+	j = 1;
+	unsigned int count = 0;//最长公共前后缀
+	while (son[j])
 	{
-
-		size_t* nextval = Getnext();
-		for (size_t i = 0; i < size; i++)
-			while (nextval[i] != 0 && Data[i] == Data[nextval[i]])
-				nextval[i] = nextval[nextval[i]];
-
-		/*for (size_t i = 0; i < size; i++)
-			std::cout << nextval[i] << " ";
-		std::cout << std::endl;*/
-
-		return nextval;
-	}
-	size_t String::Getsize()const
-	{
-		return this->size;
-	}
-
-	size_t String::GetCapacity()const
-	{
-		return this->capacity;
-	}
-
-	size_t String::BF(const String& son)const
-	{
-		if (son.size == 0)return 0;
-		size_t i=0,j;
-		while (Data[i])
+		if (son[j] == son[count])
 		{
-			size_t tmpi = i;//
-			j = 0;
-			while (Data[tmpi] == son.Data[j])
+			count++;
+			PM[j++] = count;
+		}
+		else
+		{
+			if (count == 0)
 			{
-				if (Data[tmpi] == '\0' || son.Data[j] == '\0')break;
-				tmpi++;
-				j++;
+				PM[j++] = 0;
 			}
-				
-			if (j == son.size)return i+1;//返回匹配位置
+			else
+			{
+				count = PM[count - 1];//回溯最长公共前后缀
+			}
+		}
+	}
+	next[0] = 0;
+	for (unsigned int k = 0; k < sonlen - 1; k++)
+		next[k+1] = PM[k];
+	for (unsigned int k = 0; k < sonlen; k++)
+		while (son[k] == son[next[k]]&&next[k]!=0)
+			next[k] = next[next[k]];
+	//next->nextval
+	j = 0;
+	while (pattern[i])
+	{
+		if (pattern[i] == son[j])
+		{
 			i++;
+			j++;
 		}
-		return 0;
-	}
-
-	size_t String::KMP(const String& son)const
-	{
-		size_t* nextval = son.Getnextval();
-		size_t i = 0, j = 0;
-		while (i < size)
+		else
 		{
-			if (Data[i] == son.Data[j])
-			{
+			if (j == 0)
 				i++;
-				j++;
-			}
-			else if (j == 0)
-			{
-				i++;
-			}
-			else j = nextval[j];
-			if (j == son.size)
-			{
-				delete[] nextval;
-				return i - j + 1;
-			}
+			else j = next[j];
+
 		}
-		delete[] nextval;
-		return 0;
+		if (son[j] == '\0')return i - j + 1;
 	}
-	
-	void String::AllocateMoreMemory()
-	{
-		capacity = capacity + capacity / 2 + 1;
-		char* NewData = new char[capacity];
-
-		for (size_t i = 0; i <= size; i++)
-			NewData[i] = Data[i];
-		delete []Data;
-		Data = NewData;
-	}
-	void String::AllocateLessMemory()
-	{
-		capacity = capacity/2;
-		char* NewData = new char[capacity];
-		for (size_t i = 0; i <= size; i++)
-			NewData[i] = Data[i];
-		delete []Data;
-		Data = NewData;
-	}
+	return 0;
 }
-
-
-namespace DSL
-{
-	size_t strlen(const char* str)
-	{
-		if (str == nullptr)return 0;
-		size_t ret = 0;
-		while (str[ret])ret++;
-
-		return ret;
-	}
-	void strcopy(char* dst, const char* src)
-	{
-		while (*src)
-			*dst++ = *src++;
-	}
-	void strcopy(char* dst, const std::string& src)
-	{
-		for (auto it = src.begin(); it != src.end(); it++)
-			*dst++ = *it;
-	}
-}
-

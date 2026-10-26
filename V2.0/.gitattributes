@@ -1,11 +1,2 @@
-# 统一换行处理：仓库内规范为 LF，避免跨平台/重装时出现整文件 diff
+# Auto detect text files and perform LF normalization
 * text=auto
-
-*.cpp  text
-*.h    text
-*.inl  text
-*.sln  text eol=crlf
-*.vcxproj     text eol=crlf
-*.vcxproj.filters text eol=crlf
-
-*.png  binary

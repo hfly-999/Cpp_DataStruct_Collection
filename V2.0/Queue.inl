@@ -1,56 +1,81 @@
-﻿//#include"Queue.h"
-//using namespace DSL;
-//
-///*--------------------------------------------------------------*/
-////链式队列
-//
-////构造
-//template<typename type>
-//LQueue<type>::LQueue() :L()
-//{
-//
-//}
-////拷贝构造
-//template<typename type>
-//LQueue<type>::LQueue(const LQueue& obj) :
-//	L(obj.L)
-//{
-//
-//}
-////析构
-//template<typename type>
-//LQueue<type>::~LQueue()
-//{
-//	
-//}
-////进队列
-//template<typename type>
-//void LQueue<type>::push_back(type element)
-//{
-//	L.push_back(element);
-//}
-////出队列
-//template<typename type>
-//type LQueue<type>::pop()
-//{
-//	if (L.empty())
-//		return type{};
-//	return L.HeadDelete();
-//}
-////判断队列是否为空
-//template<typename type>
-//bool LQueue<type>::empty()const
-//{
-//	return L.empty();
-//}
-////访问队列
-//template<typename type>
-//void LQueue<type>::Visit()const
-//{
-//	L.Visit();
-//}
+#include"Queue.h"
+										
+namespace DSL
+{
+//--------------------------------------------------------//
+/*
+*		DataStruct-Queue(·ºÐÍ¶ÓÁÐ)
+*
+*		Created by HFLY
+*
+*				---time:2026.6.3
+*
+*/
+//--------------------------------------------------------//
+	template<typename type>
+	GenericQueue<type>::GenericQueue()
+	{
+		Data = new type[DEFAULT_QUEUE_SIZE];
+		rear = 0;
+		front = 0;
+		DefaultSize = DEFAULT_QUEUE_SIZE;
+		mallocSize = DEFAULT_QUEUE_SIZE;
+	}
 
 
+	template<typename type>
+	GenericQueue<type>::~GenericQueue()
+	{
+		delete Data;
+	}
 
 
+	template<typename type>
+	bool GenericQueue<type>::EnQueue(type e)
+	{
+		if (IsFull() == false)
+		{
+			Data[rear++] = e;
+			rear %= mallocSize;
+			return true;
+		}
+		return false;
+	}
 
+
+	template<typename type>
+	bool GenericQueue<type>::DeQueue(type& e)
+	{
+		if (IsEmpty() == false)
+		{
+			e = Data[front++];
+			front %= mallocSize;
+			return true;
+
+		}
+		return false;
+	}
+
+
+	template<typename type>
+	bool GenericQueue<type>::IsFull()
+	{
+		if ((rear + 1) % mallocSize == front)return true;
+		return false;
+	}
+
+
+	template<typename type>
+	bool GenericQueue<type>::IsEmpty()
+	{
+		if (rear == front)return true;
+		return false;
+	}
+
+
+	template<typename type>
+	unsigned int GenericQueue<type>::GetLength()
+	{
+		return (rear + DEFAULT_QUEUE_SIZE - front) % DEFAULT_QUEUE_SIZE;
+	}
+}
