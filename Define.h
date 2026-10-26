@@ -14,3 +14,4 @@
 #define VOID 0x00000000//空
 
 namespace DSL {};//DataStructLibrary数据结构的命名空间
+

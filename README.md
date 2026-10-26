@@ -16,7 +16,7 @@
 | 模块 | 文件 | 状态 |
 | --- | --- | --- |
 | 单链表 `list` | `mylist.h` / `.inl` / `.cpp` | ✅ **可用**：双向循环 + 单哨兵；构造 / `initializer_list` 构造 / 拷贝构造 / 拷贝赋值 / 析构；`insert` / `erase` / `push_front` / `push_back` / `pop_front` / `pop_back` / `clear` / `front` / `back` / `size` / `empty` / `reverse`；**`iterator` + `const_iterator` 两套迭代器**；`check()` 不变量自检 |
-| 顺序表 `vector` | `myvector.h` / `.cpp` | 🚧 **可用但待打磨**：原始内存分配（`::operator new` + placement new）、默认 / `initializer_list` / 拷贝构造、拷贝赋值（含自赋值保护）；`insert`（任意位置，容量不足自动扩容）/ `push_back` / `push_front` / `clear` / `operator[]`（const + 非 const）/ `front` / `back` / `size` / `capacity` / `empty` / `begin` / `end`（各两个版本）；`erase` / `pop_back` / `reserve` 尚缺 |
+| 顺序表 `vector` | `myvector.h` / `.cpp` | 🚧 **可用但待打磨**：原始内存分配（`::operator new` + placement new）、默认 / `initializer_list` / 拷贝构造、拷贝赋值（含自赋值保护）；`insert`（任意位置，容量不足自动扩容）/ `erase` / `pop_back` / `push_back` / `push_front` / `clear` / `operator[]` / `front` / `back` / `size` / `capacity` / `empty` / `begin` / `end`（后四者各两个 const 版本）；`reserve` / `swap` / `operator==` / `resize` 尚缺 |
 | 字符串 `String` | `String.h` / `.cpp` | ✅ 已实现：BF 与 KMP 子串匹配（含 `next` / `nextval` 数组） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
 | 顺序栈 / 链栈 | `Stack.h` / `.inl` / `.cpp` | ⏸ 已实现，随底层接口重构暂时注释 |
@@ -39,7 +39,11 @@
 - 元素用 placement new 在指定地址上构造；析构时逐个显式调用 `~type()`
 - `[0, size)` 是活对象，`[size, capacity)` 是未构造的原始内存 —— **这是 `size` 与 `capacity` 能分开的根本原因**
 - 扩容时按 1.5 倍增长（`calcapacity`，下限为 2）
-- 所有插入都走同一个 `insert`：先用 `pos - Data` 算出下标（**必须在扩容之前算** —— 扩容会换掉 `Data`），再按需扩容，然后把 `[pos, size)` 从后往前整体后移一格，最后在 `pos` 处构造新元素
+- 所有插入都走同一个 `insert`：先用 `pos - Data` 算出下标（**必须在扩容之前算** —— 扩容会换掉 `Data`），再按需扩容，然后只做三件事：
+  1. 在 `Data[size]` 处**构造**一次 —— 这是整个 `insert` 唯一的一次构造（`size` 处是未构造的原始内存）
+  2. 中间元素逐个**拷贝赋值**后移
+  3. 新值**拷贝赋值**进目标槽位
+- 因此 `insert` 期间**不会析构容器内任何已有元素**：目标位置是「被覆盖」，不是「删掉再重建」。（唯一的析构来自函数内的局部拷贝，用来防止 `insert(pos, v[k])` 读到被移位覆盖的数据）
 
 ## 待改进
 
@@ -47,17 +51,16 @@
 
 ### `vector`
 
-- `insert(pos, v[k])`：当被插入的值引用的是本容器中**位于插入点之后**的元素时，移位过程会先析构该元素，导致插入错误数据（静默错误，不崩溃）
-- `front` / `back` 按值返回，且只有 `const` 版本
-- 缺 `erase` / `pop_back` / `reserve`
+- 缺 `reserve` / `swap` / `operator==` / `resize` / `data()` / `erase(first, last)`
 - `~vector()` 无需 `virtual`
+- `check()` 未声明为 `const`
+- 要求 `type` 可默认构造（`insert` 中的 `new (Data + size) type()`）；接入移动语义后可放宽
 
 ### `list`
 
-- 两个迭代器的 `operator*` 都缺 `const`，导致 `const iterator it` 无法解引用
-- `front` / `back` 只有 `const` 版本，非 `const` 对象无法通过它们修改元素
-- `const_iterator` 构造缺默认参数，`const_iterator ci;` 无法编译
-- `const_iterator::operator--()` 返回的是值而非引用
+- 迭代器缺 `operator->`，`it->member` 无法使用
+- 迭代器缺 5 个类型别名（`value_type` 等），暂时无法与 `std::find` / `std::distance` 等标准算法配合
+- `~list()` 无需 `virtual`
 
 ## 目录约定
 

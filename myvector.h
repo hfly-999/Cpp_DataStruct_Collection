@@ -69,11 +69,13 @@ namespace DSL
 			check();
 			return *this;
 		}//拷贝赋值
+
 		type& operator[](size_t index)
 		{
 			assert(index < Size);
 			return Data[index];
 		}//可以修改的版本
+
 		const type& operator[](size_t index)const
 		{
 			assert(index < Size);
@@ -92,17 +94,19 @@ namespace DSL
 		//插入
 		void insert(type* pos,const type& value)
 		{
+			type tmp = value;//拷贝value的副本,防止自赋值导致value被改变
 			size_t i = pos - Data;//计算插入下标;
 			assert(i <= Size);//插入位置非法
 			if (full())reallocate();//扩容
-			for (size_t j = Size; j != i; j--)
-			{
-				new (Data + j)type(Data[j - 1]);//进行type拷贝构造
-				Data[j - 1].~type();//析构
-			}
-			new (Data + i)type(value);//插入处进行构造
-			Size++;//维护size
 			
+			new (Data + Size)type();//执行构造
+			for (size_t j = Size; j != i; --j)		
+				Data[j] = Data[j - 1];//拷贝赋值
+			Data[i]=tmp;//拷贝赋值
+
+			
+			Size++;//维护size
+			check();
 		}
 		void push_back(const type &value) 
 		{ 
@@ -119,16 +123,28 @@ namespace DSL
 		bool empty()const { return Size == 0; }
 		size_t capacity()const { return Capacity; }
 		size_t size()const { return Size; }
-		type back()const
+		type& back()
 		{
 			assert(!empty());
 			return Data[Size - 1];
 		}
-		type front()const
+		const type& back()const
+		{
+			assert(!empty());
+			return Data[Size - 1];
+		}
+
+		type& front()
 		{
 			assert(!empty());
 			return Data[0];
 		}
+		const type& front()const
+		{
+			assert(!empty());
+			return Data[0];
+		}
+
 
 		//delete
 		//清空vector
@@ -140,7 +156,19 @@ namespace DSL
 				Size--;
 			}
 		}
-		
+		void pop_back()
+		{
+			erase(end()-1);
+		}
+		void erase(type* pos)
+		{
+			size_t i = pos - begin();
+			assert(i < Size);
+			for (size_t j = i + 1; j < Size; ++j)
+				Data[j - 1] = Data[j];
+			Data[Size - 1].~type();
+			Size--;//维护Size
+		}
 
 
 		
@@ -175,8 +203,24 @@ namespace DSL
 		static size_t calcapacity(size_t sz) { return	sz <= 1 ? 2 : sz + sz / 2; }
 	};
 
-	void Test();
-
+	void vector_pop_back_test()
+	{
+		vector<int>v = { 1,2,3,4 };
+		v.pop_back();
+		for (auto it = v.begin(); it != v.end(); ++it)
+			std::cout << *it << std::endl;
+	}
+	void vector_insert_test()
+	{
+		vector<std::string>v;
+		v.insert(v.begin(), "LIWEI");
+		v.insert(v.begin(), "HFLY");
+		v.insert(v.begin(), "TIAN GUI");
+		v.insert(v.begin(), "THE SHY");
+		v.insert(v.begin(), "YASUO");
+		for (auto it = v.begin(); it != v.end(); ++it)
+			std::cout << *it << std::endl;
+	}
 
 }
 

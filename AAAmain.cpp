@@ -4,14 +4,14 @@
 #include<list>
 
 using namespace DSL;
-
+void warnness()
+{
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+}
 int main()
 {
-	vector<int>v = { 1,2,3,4,5 };
-	const vector<int>& rv = v;
-
-	for (auto it = rv.begin(); it != rv.end(); ++it)
-	{
-		std::cout << *it<<"\n";
-	}
+	warnness();
+	vector_insert_test();
 }
