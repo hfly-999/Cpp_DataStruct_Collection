@@ -1,0 +1,34 @@
+# ---------- Visual Studio ----------
+.vs/
+*.user
+*.suo
+*.sln.docstates
+*.VC.db
+*.vsidx
+
+# ---------- MSVC 构建产物 ----------
+Debug/
+Release/
+x64/
+ARM/
+Cpp_OOP_.*/
+*.exe
+*.dll
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.obj
+*.idb
+*.ipdb
+*.iobj
+*.pch
+*.ipch
+*.tlog
+*.recipe
+*.lastbuildstate
+
+# ---------- 本地产出 ----------
+C++水平画像.png
+_review_utf8/
+_r2/
