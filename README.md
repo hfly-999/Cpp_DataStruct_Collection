@@ -1,4 +1,4 @@
-﻿# Cpp_DataStruct_Collection
+# Cpp_DataStruct_Collection
 
 C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风格一路重写到现代 C++ 容器库。
 
@@ -109,14 +109,14 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 | 队列适配器 `queue` | `myqueue.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::list`；`push` / `pop` / `front` / `back` / `empty` / `size` |
 | 字符串 `String` | `String.h` / `.cpp` | ✅ 已实现：BF 与 KMP 子串匹配（含 `next` / `nextval` 数组） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
-| 二叉树 `Tree` | `Tree.h` / `.inl` / `.cpp` | 🚧 **重新设计中**：`BNode` / `BTree` 类结构已定，成员函数尚未实现，且当前有 5 处实现问题会导致实例化失败（见「不足」） |
+| 二叉树 `Tree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构同样用层次遍历删除，深树不会爆栈 |
 
 ### 实现要点
 
 - **`list` 双向循环链表 + 单哨兵**：空表时 `Head` 自指，插入只有「在某个节点之前插入」一种情况，不需要为首尾写特例；`iterator` 与 `const_iterator` 是两个独立类，唯一区别是 `operator*` 返回 `type&` 还是 `const type&`；`check()` 在 Debug 下校验节点数、双向指针一致性和环闭合
 - **`vector` 原始内存 + placement new**：`::operator new` 只申请字节不构造对象，`[0, size)` 是活对象、`[size, capacity)` 是未构造内存；扩容按 1.5 倍增长；`insert` 先算下标再扩容，只构造一次、其余拷贝赋值，不会析构容器内已有元素
 - **`stack` / `queue` 容器适配器**：两者都不实现存储，只持有一个容器（**组合而非继承**）；容器作为模板参数，默认值分别是 `DSL::vector` 与 `DSL::list`，因此底层容器的 `insert` / `begin` / `operator[]` 不会泄漏到适配器接口上
-- **`Tree` 节点只存数据**：`BNode` 只保留 `val` / `lchild` / `rchild`，原先写在节点上的递归析构、递归拷贝构造、递归赋值全部移除；`friend class BTree<T>` 显式声明「只有树能碰节点私有字段」；整棵树的删除改用**层次遍历**（借助 `DSL::queue`），避免深树递归爆栈
+- **`Tree` 节点只存数据、操作全非递归**：`BNode` 只保留 `val` / `lchild` / `rchild`，递归析构、递归拷贝构造、递归赋值都不再挂在节点上；`friend class BTree<T>` 显式声明「只有树能碰节点私有字段」；四种遍历用显式 `stack` / `queue` 实现，整棵树的删除用层次遍历，因此再深的树也不会爆栈
 
 ### 特点
 
@@ -124,6 +124,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 - **两套迭代器**：`iterator` / `const_iterator`，越权写编译期拦截
 - **不变量自检**：`check()` 保证链表结构正确
 - **容器适配器**：`stack` / `queue` 以模板参数复用底层容器，换底层不动上层
+- **全非递归的树操作**：四种遍历用显式栈 / 队列，析构用层次遍历
 - **完整的 VS 工程**：VS 2022 + C++14 + `/utf-8`
 - **有开发记录**：`CHANGELOG.txt` 按日期记录变更，`need.txt` 记录待办
 
@@ -132,7 +133,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 - `vector` 缺 `reserve` / `swap` / `operator==` / `resize` / `data()`，且要求元素可默认构造
 - `list` 迭代器缺 `operator->` 和 5 个类型别名，暂时不能配合标准算法
 - `stack` / `queue` 缺 `#pragma once`，`size()` 未加 `const`，`stack::push` 按值传参
-- `Tree` 目前一旦实例化即编译失败：`friend` 缺模板参数、`tree` 未初始化、只删拷贝构造未删拷贝赋值、默认构造丢失、队列元素类型写成了对象
+- `Tree` 的 `Insert(value, path)` 用 `"l"/"r"` 字符串描述插入路径，更像「按图纸建树」而不是「按序插入」；`BNode::visit()` 内部直接写 `std::cout`，要求元素可流输出
 - `Unique_ptr` 未完成移动语义
 
 ---
@@ -159,7 +160,7 @@ V3.0 (2026-08)
 ```
 Cpp_DataStruct_Collection/
 ├── README.md
-├── V1.0/                     # 2025-08-07，20 个文件
+├── V1.0/                     # 2025-08-07，21 个文件（C 风格）
 │   ├── README.md
 │   ├── Define.h
 │   ├── SqList.h / SqList.cpp
@@ -172,7 +173,7 @@ Cpp_DataStruct_Collection/
 │   ├── Search.h / Search.cpp
 │   ├── Sort.h / Sort.cpp
 │   └── main.cpp
-├── V2.0/                     # 2026-05-22，32 个文件
+├── V2.0/                     # 2026-05-22，32 个文件（面向对象 + 继承）
 │   ├── README.md
 │   ├── Define.h
 │   ├── LinkList.h + GenericLinkList.inl
@@ -185,19 +186,20 @@ Cpp_DataStruct_Collection/
 │   ├── String.h / String.cpp
 │   ├── main.cpp
 │   └── Cpp_DataStruct_2026_5_22.sln / .vcxproj / .filters / .user
-└── V3.0/                     # 2026-08-14，29 个文件
+└── V3.0/                     # 2026-08-14，26 个文件（容器为主，当前主力）
     ├── README.md
     ├── Define.h / Include.h
     ├── mylist.h / .inl / .cpp
     ├── myvector.h / .cpp
+    ├── mystack.h             # stack 适配器，默认底层 vector
+    ├── myqueue.h             # queue 适配器，默认底层 list
     ├── String.h / .inl / .cpp
     ├── Unique_ptr.h / .cpp
-    ├── Stack.h / .inl / .cpp
-    ├── Queue.h / .inl / .cpp
     ├── Tree.h / .inl / .cpp
     ├── AAAmain.cpp
     ├── CHANGELOG.txt / need.txt
-    └── Cpp_OOP_DataStruct_2026_8_14.sln / .vcxproj / .filters
+    ├── .gitattributes / .gitignore
+    └── Cpp_DataStruct_2026_8_14.sln / .vcxproj / .filters
 ```
 
 ## 编译
@@ -211,3 +213,4 @@ Cpp_DataStruct_Collection/
 - V1.0 和 V3.0 通过 `git subtree` 合并，保留各自提交历史；V2.0 的原仓库含 380MB 构建缓存，因此只导入了源码与工程文件
 - 编码：V1.0 主要是 GBK；V2.0 部分注释为 GBK，可能乱码；V3.0 统一 UTF-8 with BOM
 - 三个版本是同一项目的迭代关系，不是三个独立项目
+- V3.0 的构建产物（`.vs/`、`x64/`、`Cpp_OOP_*/`、`*.obj` 等）由 `V3.0/.gitignore` 忽略，不会进仓库

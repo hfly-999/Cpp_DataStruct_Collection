@@ -4,6 +4,8 @@
 
 这是学习 C++ 面向对象与数据结构过程中的实践项目：容器均自行实现，不依赖 STL 容器，目的是把内存管理、拷贝语义、迭代器与经典算法真正写一遍。
 
+> 本目录是 [Cpp_DataStruct_Collection](../README.md) 的 **V3.0** 版本，仓库总览（三个版本的对比与演进）请看根目录的 README。
+
 ## 编译环境
 
 - Visual Studio 2022（v143 工具集）
@@ -21,7 +23,7 @@
 | 队列适配器 `queue` | `myqueue.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::list`；`push` / `pop` / `front` / `back` / `empty` / `size` |
 | 字符串 `String` | `String.h` / `.cpp` | ✅ 已实现：BF 与 KMP 子串匹配（含 `next` / `nextval` 数组） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
-| 二叉树 `Tree` | `Tree.h` / `.inl` / `.cpp` | 🚧 **重新设计中**：`BNode` / `BTree` 的类结构已定，成员函数尚未实现，且当前有 5 处实现问题会导致实例化失败（详见「待改进」） |
+| 二叉树 `Tree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构用层次遍历删除，深树不爆栈 |
 
 > 原 `Stack.h` / `Queue.h` / `Stack.inl` / `Queue.inl` 已删除，由 `mystack.h` / `myqueue.h` 取代。
 
@@ -59,16 +61,14 @@
 - 它们对底层只要求少数几个操作：栈需要 `push_back` / `pop_back` / `size`，队列需要 `push_back` / `pop_front` / `size`
 - 因为用组合而不是继承，底层容器的 `insert` / `begin` / `operator[]` **不会**泄漏到适配器的接口上 —— 栈就只能从顶上看
 
-### `Tree`：节点只存数据，行为归容器
+### `Tree`：节点只存数据，操作全非递归
 
-设计中确立的几条原则：
-
-- `BNode` 只保留 `val` / `lchild` / `rchild`，**不再承担任何树的行为**（此前的版本里，节点的递归析构、递归拷贝构造、递归赋值都写在节点上）
-- `friend class BTree<T>;` —— 显式声明「只有 `BTree` 能碰节点的私有字段」，其余代码一律无权访问
-- 删除整棵树用**层次遍历**（借助 `DSL::queue`）而不是递归：递归删除在深树上会导致栈溢出
-- 拷贝构造 / 拷贝赋值应当在 `BTree` 上**显式删除**，避免两棵树共享同一批节点后二次释放
-
-> 以上是设计目标。实现上还有若干处没有落地，见「待改进」。
+- `BNode` 只保留 `val` / `lchild` / `rchild`，**不承担任何树的行为** —— 早期版本里节点的递归析构、递归拷贝构造、递归赋值都写在节点上，既难维护，又把树的行为分散到了两个类里
+- `friend class BTree<T>;` —— 显式声明「只有 `BTree` 能碰节点的私有字段」，其余代码一律无权访问。**注意不能再在它前面加一行 `template<typename T>`**：那样会变成「所有 `BTree<X>` 都是所有 `BNode<Y>` 的友元」，并触发 `C3772` 友元模板声明无效
+- 四种遍历**全部非递归**：先序 / 中序 / 后序用显式 `DSL::stack`，层次遍历用 `DSL::queue`
+- 删除整棵树也用层次遍历（借助 `DSL::queue`），因此再深的树也不会爆栈
+- 拷贝构造 / 拷贝赋值在 `BTree` 上**显式删除**，避免两棵树共享同一批节点后二次释放
+- `Insert(value, path)` 用一个 `"l"/"r"` 路径串描述插入位置，便于按指定形状建树
 
 ## 待改进
 
@@ -96,15 +96,9 @@
 
 ### `Tree`
 
-当前模块**一旦被 `#include` 并实例化就会编译失败**，已知 5 处问题：
-
-1. `BNode` 里的 `friend class BTree;` 缺少模板参数 —— 它会把 `BTree` 声明成**非模板类**，与后面的 `template<typename T> class BTree` 冲突（`C2989`）。应改为「前置声明 + `friend class BTree<T>;`」
-2. `BNode<T>* tree;` **未初始化**，而 `~BTree()` 第一行就用 `if (tree == nullptr)` 判断 —— 读的是未初始化的值
-3. 只删除了拷贝构造、**没有删除拷贝赋值**：`a = b` 仍会走隐式拷贝赋值，造成两个 `BTree` 共享同一棵树 → 析构时二次释放
-4. 删除拷贝构造后**默认构造也一并消失**（任何用户声明的构造函数都会抑制隐式默认构造），`BTree<int> t;` 会报 `C2512`
-5. `~BTree()` 里写的是 `queue<BNode<T>>`，但 `push` 进去的是 `BNode<T>*` —— 队列元素类型应为 `BNode<T>*`
-
-此外，`Insert` / `PreOrder` / `InOrder` / `PostOrder` / `LevelOrder` 目前只有声明、没有定义。
+- `Insert(value, path)` 用 `"l"/"r"` 字符串描述路径，更像「按图纸建树」而不是「按值有序插入」；若要当 BST 用，需要再补一个按序插入的重载
+- `BNode::visit()` 内部直接写 `std::cout`，隐含要求元素类型可流输出（装一个没有 `operator<<` 的 `struct` 会编不过）
+- `Tree.h` 顶部 `#include` 了 `mystack.h` / `myqueue.h`，即与「队列用 list 实现」这件事耦合；更彻底的做法是把容器提成模板参数
 
 ## 目录约定
 
@@ -114,7 +108,7 @@
 
 ## 下一步
 
-- `Tree`：先修上面 5 处，让模块至少能实例化；再补遍历与插入的实现
+- `Tree`：`Insert` 增加「按值有序插入」的重载；`visit()` 改为接受输出器，去掉对 `std::cout` 的硬依赖
 - `vector`：补 `reserve` / `swap` / `operator==` / `resize`，并把 `reallocate` 抽成带参数的 `reallocate_to`
 - `stack` / `queue`：补 `#pragma once`，`size()` 加 `const`，`push` 改 `const&`
 - `list`：补 `operator->` 与 5 个迭代器类型别名
