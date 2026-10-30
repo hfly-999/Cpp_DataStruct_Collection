@@ -51,10 +51,10 @@
     <ClInclude Include="String.h">
       <Filter>头文件\String</Filter>
     </ClInclude>
-    <ClInclude Include="Queue.h">
+    <ClInclude Include="myqueue.h">
       <Filter>头文件\Queue</Filter>
     </ClInclude>
-    <ClInclude Include="Stack.h">
+    <ClInclude Include="mystack.h">
       <Filter>头文件\Stack</Filter>
     </ClInclude>
     <ClInclude Include="Unique_ptr.h">
@@ -71,9 +71,6 @@
     <None Include="String.inl">
       <Filter>头文件\String</Filter>
     </None>
-    <None Include="Queue.inl">
-      <Filter>头文件\Queue</Filter>
-    </None>
     <None Include="Tree.inl">
       <Filter>头文件\Tree</Filter>
     </None>
@@ -87,12 +84,6 @@
     </ClCompile>
     <ClCompile Include="String.cpp">
       <Filter>头文件\String</Filter>
-    </ClCompile>
-    <ClCompile Include="Queue.cpp">
-      <Filter>头文件\Queue</Filter>
-    </ClCompile>
-    <ClCompile Include="Stack.cpp">
-      <Filter>头文件\Stack</Filter>
     </ClCompile>
     <ClCompile Include="Unique_ptr.cpp">
       <Filter>头文件\Unique_ptr</Filter>

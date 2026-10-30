@@ -1,5 +1,6 @@
 ﻿#include"mylist.h"
 #include"myvector.h"
+#include"Tree.h"
 #include<vector>
 #include<list>
 
@@ -12,6 +13,5 @@ void warnness()
 }
 int main()
 {
-	warnness();
-	vector_insert_test();
+	btree_insert_test();
 }

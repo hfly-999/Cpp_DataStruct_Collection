@@ -2,19 +2,19 @@
 namespace DSL
 {
 	//constructor
-	template<typename type>
-	list<type>::list() :
+	template<typename Type>
+	list<Type>::list() :
 		length(0),
-		Head(new DNode<type>())
+		Head(new DNode<Type>())
 	{
 		//set loop list
 		Head->next = Head;
 		Head->prior = Head;
 	}
-	template<typename type>
-	list<type>::list(std::initializer_list<type> ls):
+	template<typename Type>
+	list<Type>::list(std::initializer_list<Type> ls):
 		length(0),
-		Head(new DNode<type>())
+		Head(new DNode<Type>())
 	{
 		//set loop list
 		Head->next = Head;
@@ -23,15 +23,15 @@ namespace DSL
 			push_back(*it);
 	}
 	//copy constructor
-	template<typename type>
-	list<type>::list(const list<type>& obj) :
+	template<typename Type>
+	list<Type>::list(const list<Type>& obj) :
 		length(0),
-		Head(new DNode<type>())//申请头结点内存
+		Head(new DNode<Type>())//申请头结点内存
 	{
 		//set loop list
 		Head->next = Head;
 		Head->prior = Head;
-		DNode<type>* obj_node = obj.Head->next;
+		DNode<Type>* obj_node = obj.Head->next;
 		while (obj_node != obj.Head)
 		{
 			push_back(obj_node->val);
@@ -39,22 +39,21 @@ namespace DSL
 		}
 	}
 	//deconstructor
-	template<typename type>
-	list<type>::~list()
+	template<typename Type>
+	list<Type>::~list()
 	{
-		//free Link memory
-		if(!empty())
-			list::listfreememory(Head,Head->prior);
+		clear();//清空链表
+		delete Head;//释放头结点内存
 	}
 	//add
-	template<typename type>
-	void list<type>::insert(iterator pos,const type &value)
+	template<typename Type>
+	void list<Type>::insert(iterator pos,const Type &value)
 	{
 		
-		DNode<type>* next_node = pos.ptr;
+		DNode<Type>* next_node = pos.ptr;
 		
-		DNode<type>* new_node 
-			= new DNode<type>(value,next_node->prior,next_node);//malloc
+		DNode<Type>* new_node 
+			= new DNode<Type>(value,next_node->prior,next_node);//malloc
 		
 		next_node->prior->next = new_node;
 		next_node->prior = new_node;
@@ -64,19 +63,19 @@ namespace DSL
 
 	//delete
 	//清空链表
-	template<typename type>
-	void list<type>::clear()
+	template<typename Type>
+	void list<Type>::clear()
 	{
 		if (!empty())
 			list::listfreememory(Head->next, Head->prior);//释放除头结点外的所有节点
 		length = 0;//维护length
 	}
 	//删除节点
-	template<typename type>
-	void list<type>::erase(iterator pos)
+	template<typename Type>
+	void list<Type>::erase(iterator pos)
 	{
 		assert(pos != end());
-		DNode<type>* node = pos.ptr;
+		DNode<Type>* node = pos.ptr;
 		node->prior->next = node->next;
 		node->next->prior = node->prior;
 		delete node;
@@ -84,13 +83,13 @@ namespace DSL
 	}
 	//algoritm
 	//翻转链表
-	template<typename type>
-	void list<type>::reverse()
+	template<typename Type>
+	void list<Type>::reverse()
 	{
-		DNode<type>* node = Head;
+		DNode<Type>* node = Head;
 		do
 		{
-			DNode<type>* tmp = node->next;
+			DNode<Type>* tmp = node->next;
 			node->next = node->prior;
 			node->prior = tmp;
 			node = node->prior;
@@ -100,8 +99,8 @@ namespace DSL
 
 	//operator over load
 	
-	template<typename type>
-	list<type>& list<type>::operator=(const list<type>& rhs)
+	template<typename Type>
+	list<Type>& list<Type>::operator=(const list<Type>& rhs)
 	{
 		if (this == &rhs)return *this;//自赋值处理
 		clear();//清空链表
@@ -110,8 +109,8 @@ namespace DSL
 		return *this;
 	}
 	//assert
-	template<typename type>
-	void list<type>::check()const
+	template<typename Type>
+	void list<Type>::check()const
 	{
 		assert(Head != nullptr);
 		assert(Head->next != nullptr);
@@ -125,7 +124,7 @@ namespace DSL
 		else
 		{
 			size_t n = 0;
-			for (DNode<type> *p = Head->next; p != Head; p=p->next)
+			for (DNode<Type> *p = Head->next; p != Head; p=p->next)
 			{
 				assert(p != nullptr);
 				assert(p->next->prior == p);//保证后面完整
@@ -135,7 +134,7 @@ namespace DSL
 			}
 			assert(n == length);
 			n = 0;
-			for (DNode<type>* p = Head->prior; p != Head; p = p->prior)
+			for (DNode<Type>* p = Head->prior; p != Head; p = p->prior)
 			{
 				assert(p != nullptr);
 				n++;
@@ -146,15 +145,15 @@ namespace DSL
 		}
 	}
 	//static
-	template<typename type>
-	void list<type>::listfreememory(DNode<type>* start,DNode<type>* end)
+	template<typename Type>
+	void list<Type>::listfreememory(DNode<Type>* start,DNode<Type>* end)
 	{
 		assert(start != nullptr && end != nullptr);
 		start->prior->next = end->next;
 		end->next->prior = start->prior;
 		while (start != end)
 		{
-			DNode<type>* next = start->next;
+			DNode<Type>* next = start->next;
 			//std::cout << start << " DNode\t" << start->val << "\thas been free\n";
 			delete start;
 			start = next;

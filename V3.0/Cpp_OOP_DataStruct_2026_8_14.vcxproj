@@ -191,9 +191,7 @@
   <ItemGroup>
     <ClCompile Include="AAAmain.cpp" />
     <ClCompile Include="mylist.cpp" />
-    <ClCompile Include="Queue.cpp" />
     <ClCompile Include="myvector.cpp" />
-    <ClCompile Include="Stack.cpp" />
     <ClCompile Include="String.cpp" />
     <ClCompile Include="Tree.cpp" />
     <ClCompile Include="Unique_ptr.cpp" />
@@ -203,15 +201,14 @@
     <ClInclude Include="Define.h" />
     <ClInclude Include="Include.h" />
     <ClInclude Include="mylist.h" />
-    <ClInclude Include="Queue.h" />
-    <ClInclude Include="Stack.h" />
+    <ClInclude Include="myqueue.h" />
+    <ClInclude Include="mystack.h" />
     <ClInclude Include="String.h" />
     <ClInclude Include="Tree.h" />
     <ClInclude Include="Unique_ptr.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="mylist.inl" />
-    <None Include="Queue.inl" />
     <None Include="String.inl" />
     <None Include="Tree.inl" />
   </ItemGroup>

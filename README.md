@@ -1,4 +1,4 @@
-# Cpp_DataStruct_Collection
+﻿# Cpp_DataStruct_Collection
 
 C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风格一路重写到现代 C++ 容器库。
 
@@ -97,7 +97,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 
 ### 简介
 
-三个版本里完成度最高的一版。不再追求「每种结构都写一遍」，而是把 `list`、`vector` 这类容器做扎实：原始内存分配、placement new、迭代器、异常安全边界、不变量自检，都按标准库的思路重新实现。工程文件 `Cpp_OOP_DataStruct_2026_8_14.sln`。
+三个版本里完成度最高的一版。不再追求「每种结构都写一遍」，而是把 `list`、`vector` 这类容器做扎实：原始内存分配、placement new、迭代器、异常安全边界、不变量自检，都按标准库的思路重新实现；并在容器之上补了 `stack` / `queue` 两个容器适配器。工程文件 `Cpp_OOP_DataStruct_2026_8_14.sln`。
 
 ### 模块状态
 
@@ -105,31 +105,35 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 | --- | --- | --- |
 | 单链表 `list` | `mylist.h` / `.inl` / `.cpp` | ✅ **可用**：双向循环 + 单哨兵；构造 / `initializer_list` 构造 / 拷贝构造 / 拷贝赋值 / 析构；`insert` / `erase` / `push_front` / `push_back` / `pop_front` / `pop_back` / `clear` / `front` / `back` / `size` / `empty` / `reverse`；**`iterator` + `const_iterator` 两套迭代器**；`check()` 不变量自检 |
 | 顺序表 `vector` | `myvector.h` / `.cpp` | 🚧 **可用但待打磨**：原始内存分配 + placement new、默认 / `initializer_list` / 拷贝构造、拷贝赋值（含自赋值保护）；`insert`（任意位置、自动扩容）/ `erase` / `pop_back` / `push_back` / `push_front` / `clear` / `operator[]` / `front` / `back` / `size` / `capacity` / `empty` / `begin` / `end`；`reserve` / `swap` / `operator==` / `resize` 尚缺 |
+| 栈适配器 `stack` | `mystack.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::vector`；`push` / `pop` / `top` / `empty` / `size` |
+| 队列适配器 `queue` | `myqueue.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::list`；`push` / `pop` / `front` / `back` / `empty` / `size` |
 | 字符串 `String` | `String.h` / `.cpp` | ✅ 已实现：BF 与 KMP 子串匹配（含 `next` / `nextval` 数组） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
-| 顺序栈 / 链栈 | `Stack.h` / `.inl` / `.cpp` | ⏸ 已实现，随底层接口重构暂时注释 |
-| 链队列 | `Queue.h` / `.inl` / `.cpp` | ⏸ 已实现，随底层接口重构暂时注释 |
-| 二叉树 | `Tree.h` / `.inl` / `.cpp` | ⏸ 已实现，先序/中序/后序/层次遍历均为非递归，随底层接口重构暂时注释 |
+| 二叉树 `Tree` | `Tree.h` / `.inl` / `.cpp` | 🚧 **重新设计中**：`BNode` / `BTree` 类结构已定，成员函数尚未实现，且当前有 5 处实现问题会导致实例化失败（见「不足」） |
 
 ### 实现要点
 
 - **`list` 双向循环链表 + 单哨兵**：空表时 `Head` 自指，插入只有「在某个节点之前插入」一种情况，不需要为首尾写特例；`iterator` 与 `const_iterator` 是两个独立类，唯一区别是 `operator*` 返回 `type&` 还是 `const type&`；`check()` 在 Debug 下校验节点数、双向指针一致性和环闭合
 - **`vector` 原始内存 + placement new**：`::operator new` 只申请字节不构造对象，`[0, size)` 是活对象、`[size, capacity)` 是未构造内存；扩容按 1.5 倍增长；`insert` 先算下标再扩容，只构造一次、其余拷贝赋值，不会析构容器内已有元素
+- **`stack` / `queue` 容器适配器**：两者都不实现存储，只持有一个容器（**组合而非继承**）；容器作为模板参数，默认值分别是 `DSL::vector` 与 `DSL::list`，因此底层容器的 `insert` / `begin` / `operator[]` 不会泄漏到适配器接口上
+- **`Tree` 节点只存数据**：`BNode` 只保留 `val` / `lchild` / `rchild`，原先写在节点上的递归析构、递归拷贝构造、递归赋值全部移除；`friend class BTree<T>` 显式声明「只有树能碰节点私有字段」；整棵树的删除改用**层次遍历**（借助 `DSL::queue`），避免深树递归爆栈
 
 ### 特点
 
 - **最接近标准库**：原始内存管理、placement new、显式析构、迭代器
 - **两套迭代器**：`iterator` / `const_iterator`，越权写编译期拦截
 - **不变量自检**：`check()` 保证链表结构正确
+- **容器适配器**：`stack` / `queue` 以模板参数复用底层容器，换底层不动上层
 - **完整的 VS 工程**：VS 2022 + C++14 + `/utf-8`
 - **有开发记录**：`CHANGELOG.txt` 按日期记录变更，`need.txt` 记录待办
 
 ### 不足
 
-- `vector` 缺 `reserve` / `swap` / `operator==` / `resize` / `data()` / `erase(first, last)`，且要求元素可默认构造
+- `vector` 缺 `reserve` / `swap` / `operator==` / `resize` / `data()`，且要求元素可默认构造
 - `list` 迭代器缺 `operator->` 和 5 个类型别名，暂时不能配合标准算法
+- `stack` / `queue` 缺 `#pragma once`，`size()` 未加 `const`，`stack::push` 按值传参
+- `Tree` 目前一旦实例化即编译失败：`friend` 缺模板参数、`tree` 未初始化、只删拷贝构造未删拷贝赋值、默认构造丢失、队列元素类型写成了对象
 - `Unique_ptr` 未完成移动语义
-- `Stack` / `Queue` / `Tree` 因底层接口重构被暂时注释
 
 ---
 
