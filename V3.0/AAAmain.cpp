@@ -13,5 +13,5 @@ void warnness()
 }
 int main()
 {
-	btree_insert_test();
+	thread_tree_insert_test();
 }

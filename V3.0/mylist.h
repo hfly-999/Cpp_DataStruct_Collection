@@ -55,15 +55,15 @@ namespace DSL
 			iterator(DNode<Type>* p = nullptr) :ptr(p) {}
 			//*it over load
 			Type& operator* ()const { return ptr->val; }
-			//it++
+			
 			iterator operator++(int)
 			{
 				iterator old = *this;
 				ptr = ptr->next;
 				return old;
-			}
-			//++it
-			iterator& operator++()
+			}//it++		
+	
+			iterator& operator++()//++it
 			{
 				ptr = ptr->next;
 				return *this;

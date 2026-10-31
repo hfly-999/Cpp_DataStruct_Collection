@@ -23,7 +23,8 @@
 | 队列适配器 `queue` | `myqueue.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::list`；`push` / `pop` / `front` / `back` / `empty` / `size` |
 | 字符串 `String` | `String.h` / `.cpp` | ✅ 已实现：BF 与 KMP 子串匹配（含 `next` / `nextval` 数组） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
-| 二叉树 `Tree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构用层次遍历删除，深树不爆栈 |
+| 二叉树 `BTree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构用层次遍历删除，深树不爆栈 |
+| 线索二叉树 `ThreadTree` | `Tree.h` / `.inl` | ✅ **可用**：共用同一套建树逻辑 + `InThread()` 中序线索化；`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode` 四个导航函数；**`iterator` 支持 `++` / `--` 双向遍历，中序不再用栈** |
 
 > 原 `Stack.h` / `Queue.h` / `Stack.inl` / `Queue.inl` 已删除，由 `mystack.h` / `myqueue.h` 取代。
 
@@ -70,6 +71,20 @@
 - 拷贝构造 / 拷贝赋值在 `BTree` 上**显式删除**，避免两棵树共享同一批节点后二次释放
 - `Insert(value, path)` 用一个 `"l"/"r"` 路径串描述插入位置，便于按指定形状建树
 
+### `ThreadTree`：线索化把「栈」从遍历里拿掉
+
+- 线索化（`InThread`）就是在一棵**已经建好**的树上跑一遍中序遍历，额外维护一个 `pre` 指针：
+  - 访问 `p` 时，若 `pre->rchild` 为空 → 让 `pre->rchild` 指向 `p`，`pre->rtag = true`
+  - 若 `p->lchild` 为空 → 让 `p->lchild` 指向 `pre`，`p->ltag = true`
+- 线索化完成后，中序遍历**不再需要栈**：叶子节点的空指针已经变成了「前驱 / 后继」，顺着线索走即可 —— 这是空间上的收益（省掉 O(h) 的栈）
+- 四个导航函数构成迭代器的骨架：
+  - `getfirstnode` —— 一路向左到底，得到中序第一个节点
+  - `getlastnode` —— 一路向右到底，得到中序最后一个节点
+  - `getnextnode` —— `rtag` 为真则直接走后继线索；否则是「右子树的最左节点」
+  - `getprenode` —— `ltag` 为真则直接走前驱线索；否则是「左子树的最右节点」
+- `iterator` 的 `++` / `--` 各自复用一个导航函数，`end()` 用 `nullptr` 表示「越界」，所以 `it != end()` 能自然终止
+- **同一个 `ThreadNode` 有两套指针语义**：`ltag == false` 时 `lchild` 是孩子，`ltag == true` 时它是前驱。因此删除必须走 `delete_thread_tree`（先查 tag），**不能**复用普通的 `delete_tree` —— 否则会把祖先当孩子 `delete`，直接 use-after-free
+
 ## 待改进
 
 按模块列出尚未做完的部分。
@@ -94,11 +109,17 @@
 - `stack::push` 按值传参，应为 `const Type&`
 - `stack::top()` 用 `*(c.end() - 1)` 实现，**隐含要求底层容器支持随机访问** —— 换成 `list` 会编不过，这一点应在注释里写明
 
-### `Tree`
+### `Tree` / `ThreadTree`
 
+- **`insert` 的回滚路径有 use-after-free（待修）**：`op` 里出现非 `l`/`r` 字符会走回滚分支，`delete_tree(create_tree)` 删掉了 `p` 所在的子树，但函数末尾仍会执行 `p->val = value` —— ASan 报 `heap-use-after-free`（WRITE）。修法是在回滚分支末尾直接 `return false;`
+- **`InThread()` 只能调用一次**：重复线索化时 `lchild` 已指向前驱，遍历会跳到别的子树上去。目前没有 `threaded` 标志做保护
+- `delete_tree` 与 `delete_thread_tree` 几乎是同一份代码，只差两个 tag 判断。如果让 `ThreadNode::left()` / `right()` 在 `ltag` / `rtag` 为真时返回 `nullptr`，再另配 `raw_left()` / `raw_right()` 供线索化使用，两份可以合并成一份
+- `iterator::operator*` 返回 `T&`，const 迭代器也能改值；缺 `const_iterator`，`operator==` / `operator!=` 也未声明 `const`
+- `BTree::operator=` 的返回类型写成了 `BTree`，应为 `BTree&`（`ThreadTree` 那处是对的）
+- `insert` 里的 `bool dir_l` 赋值了三处、从未被读取（死变量）
 - `Insert(value, path)` 用 `"l"/"r"` 字符串描述路径，更像「按图纸建树」而不是「按值有序插入」；若要当 BST 用，需要再补一个按序插入的重载
 - `BNode::visit()` 内部直接写 `std::cout`，隐含要求元素类型可流输出（装一个没有 `operator<<` 的 `struct` 会编不过）
-- `Tree.h` 顶部 `#include` 了 `mystack.h` / `myqueue.h`，即与「队列用 list 实现」这件事耦合；更彻底的做法是把容器提成模板参数
+- `Tree.h` 顶部 `#include` 了 `mystack.h` / `myqueue.h`，即与「栈 / 队列用哪种容器实现」这件事耦合；更彻底的做法是把容器提成模板参数
 
 ## 目录约定
 
@@ -108,6 +129,8 @@
 
 ## 下一步
 
+- `Tree`：修 `insert` 回滚路径的 use-after-free；给 `InThread()` 加 `threaded` 标志，防止重复线索化
+- `Tree`：合并 `delete_tree` / `delete_thread_tree`；`iterator` 补 `const_iterator` 与 `const` 成员函数
 - `Tree`：`Insert` 增加「按值有序插入」的重载；`visit()` 改为接受输出器，去掉对 `std::cout` 的硬依赖
 - `vector`：补 `reserve` / `swap` / `operator==` / `resize`，并把 `reallocate` 抽成带参数的 `reallocate_to`
 - `stack` / `queue`：补 `#pragma once`，`size()` 加 `const`，`push` 改 `const&`

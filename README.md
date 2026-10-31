@@ -109,7 +109,8 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 | 队列适配器 `queue` | `myqueue.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::list`；`push` / `pop` / `front` / `back` / `empty` / `size` |
 | 字符串 `String` | `String.h` / `.cpp` | ✅ 已实现：BF 与 KMP 子串匹配（含 `next` / `nextval` 数组） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
-| 二叉树 `Tree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构同样用层次遍历删除，深树不会爆栈 |
+| 二叉树 `BTree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构同样用层次遍历删除，深树不会爆栈 |
+| 线索二叉树 `ThreadTree` | `Tree.h` / `.inl` | ✅ **可用**：共用同一套建树逻辑 + `InThread()` 中序线索化；`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode` 四个导航函数；**`iterator` 支持 `++` / `--` 双向遍历，中序不再用栈** |
 
 ### 实现要点
 
@@ -117,6 +118,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 - **`vector` 原始内存 + placement new**：`::operator new` 只申请字节不构造对象，`[0, size)` 是活对象、`[size, capacity)` 是未构造内存；扩容按 1.5 倍增长；`insert` 先算下标再扩容，只构造一次、其余拷贝赋值，不会析构容器内已有元素
 - **`stack` / `queue` 容器适配器**：两者都不实现存储，只持有一个容器（**组合而非继承**）；容器作为模板参数，默认值分别是 `DSL::vector` 与 `DSL::list`，因此底层容器的 `insert` / `begin` / `operator[]` 不会泄漏到适配器接口上
 - **`Tree` 节点只存数据、操作全非递归**：`BNode` 只保留 `val` / `lchild` / `rchild`，递归析构、递归拷贝构造、递归赋值都不再挂在节点上；`friend class BTree<T>` 显式声明「只有树能碰节点私有字段」；四种遍历用显式 `stack` / `queue` 实现，整棵树的删除用层次遍历，因此再深的树也不会爆栈
+- **`ThreadTree` 线索化把栈从遍历里拿掉**：`InThread()` 在已建好的树上跑一遍中序，用 `pre` 指针把空指针改成前驱 / 后继并置 tag；之后中序遍历顺着线索走，不再需要 O(h) 的栈。四个导航函数（`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode`）构成 `iterator` 的 `++` / `--` 骨架。**同一个 `ThreadNode` 有两套指针语义**（`ltag` 为真时 `lchild` 是前驱而不是孩子），所以删除必须走查 tag 的 `delete_thread_tree`
 
 ### 特点
 
@@ -125,6 +127,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 - **不变量自检**：`check()` 保证链表结构正确
 - **容器适配器**：`stack` / `queue` 以模板参数复用底层容器，换底层不动上层
 - **全非递归的树操作**：四种遍历用显式栈 / 队列，析构用层次遍历
+- **线索化遍历**：`ThreadTree` 中序遍历不借助栈，靠前驱 / 后继线索走完，迭代器支持正向与反向
 - **完整的 VS 工程**：VS 2022 + C++14 + `/utf-8`
 - **有开发记录**：`CHANGELOG.txt` 按日期记录变更，`need.txt` 记录待办
 
@@ -133,7 +136,9 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 - `vector` 缺 `reserve` / `swap` / `operator==` / `resize` / `data()`，且要求元素可默认构造
 - `list` 迭代器缺 `operator->` 和 5 个类型别名，暂时不能配合标准算法
 - `stack` / `queue` 缺 `#pragma once`，`size()` 未加 `const`，`stack::push` 按值传参
+- `Tree` / `ThreadTree`：`insert` 的回滚路径存在 use-after-free（待修）；`InThread()` 只能调用一次（缺 `threaded` 标志）；`delete_tree` 与 `delete_thread_tree` 仍是两份几乎相同的代码
 - `Tree` 的 `Insert(value, path)` 用 `"l"/"r"` 字符串描述插入路径，更像「按图纸建树」而不是「按序插入」；`BNode::visit()` 内部直接写 `std::cout`，要求元素可流输出
+- `ThreadTree::iterator` 缺 `const_iterator`，`operator*` 返回 `T&`（const 迭代器也能改值），比较运算符未声明 `const`
 - `Unique_ptr` 未完成移动语义
 
 ---
