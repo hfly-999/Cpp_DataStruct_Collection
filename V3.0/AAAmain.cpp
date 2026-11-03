@@ -1,8 +1,6 @@
-﻿#include"mylist.h"
-#include"myvector.h"
-#include"Tree.h"
-#include<vector>
-#include<list>
+﻿
+#include"String.h"
+
 
 using namespace DSL;
 void warnness()
@@ -13,5 +11,8 @@ void warnness()
 }
 int main()
 {
-	thread_tree_insert_test();
+	String str1 = "123456789JKLOVE";
+	String str2 = "789";
+	std::cout << str1.KMP(str2);
+
 }

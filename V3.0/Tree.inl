@@ -93,7 +93,44 @@
 * 
 * 
 ----------------------ThreadTree--------------------------*/
-	
+	template<typename T>
+	void ThreadTree<T>::InThread()//中序线索化
+	{
+		if (root == nullptr)return;
+		stack<ThreadNode<T>*>S;
+		S.push(root);
+		bool ispush = true;
+		ThreadNode<T>* pre = nullptr;
+		while (!S.empty())
+		{
+			ThreadNode<T>* p = S.top();
+			if (p->left() && ispush)
+				S.push(p->left());
+			else
+			{
+				ispush = false;
+				S.pop();
+				//thread线索化
+				if (pre && pre->right() == nullptr)
+				{
+					pre->rchild = p;
+					pre->rtag = true;//是线索
+				}
+				if (p->left() == nullptr)
+				{
+					p->lchild = pre;
+					p->ltag = true;//是线索
+				}
+				if (p->right())
+				{
+					ispush = true;
+					S.push(p->right());
+				}
+				pre = p;
+			}
+		}
+		pre->rtag = true;
+	}
 
 
 

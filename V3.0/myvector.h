@@ -84,9 +84,11 @@ namespace DSL
 
 		//获取迭代器
 		Type* begin(){ return Data; }//允许修改的版本
+
 		const Type* begin()const { return Data; }//不允许修改的版本
 
 		Type* end() { return Data + Size; }
+
 		const Type* end()const { return Data + Size; }//不允许修改的版本
 
 
@@ -106,10 +108,12 @@ namespace DSL
 			Size++;//维护size
 			check();
 		}
+
 		void push_back(const Type &value) 
 		{ 
 			insert(end(), value);
 		}
+
 		void push_front(const Type& value)
 		{
 			insert(begin(), value);
@@ -119,13 +123,17 @@ namespace DSL
 
 		//find
 		bool empty()const { return Size == 0; }
+		
 		size_t capacity()const { return Capacity; }
+		
 		size_t size()const { return Size; }
+
 		Type& back()
 		{
 			assert(!empty());
 			return Data[Size - 1];
 		}
+
 		const Type& back()const
 		{
 			assert(!empty());
@@ -137,6 +145,7 @@ namespace DSL
 			assert(!empty());
 			return Data[0];
 		}
+
 		const Type& front()const
 		{
 			assert(!empty());
@@ -153,10 +162,12 @@ namespace DSL
 				Size--;
 			}
 		}
+
 		void pop_back()
 		{
 			erase(end()-1);
 		}
+
 		void erase(Type* pos)
 		{
 
@@ -167,6 +178,7 @@ namespace DSL
 			Data[Size - 1].~Type();
 			Size--;//维护Size
 		}
+
 		void erase(Type* first, Type* last)
 		{
 			size_t i = first - begin();
@@ -211,40 +223,11 @@ namespace DSL
 		static size_t calcapacity(size_t sz) { return	sz <= 1 ? 2 : sz + sz / 2; }
 	};
 
-	void vector_pop_back_test()
-	{
-		vector<int>v = { 1,2,3,4 };
-		v.pop_back();
-		for (auto it = v.begin(); it != v.end(); ++it)
-			std::cout << *it << std::endl;
-	}
-	void vector_insert_test()
-	{
-		vector<std::string>v;
-		v.insert(v.begin(), "LIWEI");
-		v.insert(v.begin(), "HFLY");
-		v.insert(v.begin(), "TIAN GUI");
-		v.insert(v.begin(), "THE SHY");
-		v.insert(v.begin(), "YASUO");
-		for (auto it = v.begin(); it != v.end(); ++it)
-			std::cout << *it << std::endl;
-	}
-	void vector_erase_test()
-	{
-		vector<std::string>v;
-		v.insert(v.begin(), "LIWEI");
-		v.insert(v.begin(), "HFLY");
-		v.insert(v.begin(), "TIAN GUI");
-		v.insert(v.begin(), "THE SHY");
-		v.insert(v.begin(), "YASUO");
-		v.erase(v.begin() + 1, v.end() - 1);
-		for (auto it = v.begin(); it != v.end(); ++it)
-			std::cout << *it << std::endl;
-		//"LIWEI"
-		//"YASUO"
-	}
-	
+	void vector_pop_back_test();
 
+	void vector_insert_test();
+
+	void vector_erase_test();
 }
 
 

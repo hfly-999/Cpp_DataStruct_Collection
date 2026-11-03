@@ -68,9 +68,6 @@
     <None Include="mylist.inl">
       <Filter>头文件\list</Filter>
     </None>
-    <None Include="String.inl">
-      <Filter>头文件\String</Filter>
-    </None>
     <None Include="Tree.inl">
       <Filter>头文件\Tree</Filter>
     </None>

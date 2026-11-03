@@ -48,7 +48,7 @@ namespace DSL
 	{
 		if (root == nullptr)
 			return;
-		DSL::queue<ThreadNode<T>*>Q;
+		queue<ThreadNode<T>*>Q;
 		Q.push(root);
 		while (!Q.empty())
 		{
@@ -62,11 +62,10 @@ namespace DSL
 		}
 	}
 
-	template<typename T, typename N>bool insert(const T& value, N*& root, const std::string& op = "")
+	template<typename T, typename N>bool Insert(const T& value, N*& root, const std::string& op = "")
 	{
 		N* pre = nullptr;
 		N* p = root;
-		bool dir_l = true;//现在p在pre的方向
 		N* pre_create_tree = nullptr;
 		N* create_tree = nullptr;
 		bool create_dir_l = true;//第一次创建新节点的方向是否为左
@@ -79,7 +78,6 @@ namespace DSL
 			{
 				pre = p;
 				p = p->lchild;
-				dir_l = true;//方向为左
 				if (p == nullptr)
 				{
 					p = new N();
@@ -96,7 +94,6 @@ namespace DSL
 			{
 				pre = p;
 				p = p->rchild;
-				dir_l = false;//方向为右
 				if (p == nullptr)
 				{
 					p = new N();
@@ -119,6 +116,7 @@ namespace DSL
 					else
 						pre_create_tree->rchild = nullptr;
 				}
+				return false;
 			}
 		}
 		p->val = value;
@@ -174,7 +172,8 @@ namespace DSL
 		BNode(const T& val = T{}) :val(val), lchild(nullptr), rchild(nullptr) {}//构造
 		BNode<T>* left()const { return lchild; }
 		BNode<T>* right()const { return rchild; }
-		template<typename T, typename N>friend bool insert(const T& value, N*& root, const std::string& op);//给插入函数提供访问私有成员的权限
+		template<typename T, typename N>friend bool Insert(const T& value, N*& root, const std::string& op);//给插入函数提供访问私有成员的权限
+
 	};
 	//ThreadNode
 	template<typename T>class ThreadNode
@@ -184,8 +183,7 @@ namespace DSL
 		bool rtag;
 		ThreadNode* lchild;
 		ThreadNode* rchild;
-
-		template<typename T, typename N>friend bool insert(const T& value, N*& root, const std::string& op);//给插入函数提供访问私有成员的权限
+		template<typename T, typename N>friend bool Insert(const T& value, N*& root, const std::string& op);//给插入函数提供访问私有成员的权限
 		friend class ThreadTree<T>;//给ThreadTree提供访问私有成员的权限
 	public:
 		ThreadNode() :val(T()), ltag(false), rtag(false), lchild(nullptr), rchild(nullptr) {}
@@ -195,9 +193,7 @@ namespace DSL
 		ThreadNode<T>* right()const { return rchild; }
 		bool get_ltag() const { return ltag; }
 		bool get_rtag() const { return rtag; }
-		
-		
-		
+
 	};
 /*--------------------------------------------------------------------
 *
@@ -219,7 +215,8 @@ namespace DSL
 		void InOrder()const;			//中序遍历
 		void PostOrder()const;			//后序遍历
 		void LevelOrder()const;			//层次遍历
-		void Insert(const T& value,const std::string& op="") { insert<T, BNode<T>>(value, root, op); }
+
+		void insert(const T& value,const std::string& op="") { Insert<T, BNode<T>>(value, root, op); }
 		
 	};
 	//ThreadTree线索二叉树
@@ -244,47 +241,11 @@ namespace DSL
 		ThreadTree(const ThreadTree& rhs) = delete;//禁用拷贝构造
 		ThreadTree& operator=(const ThreadTree& rhs) = delete;//禁用赋值构造
 		~ThreadTree() { delete_thread_tree<T>(root); }
-		void InThread()//中序线索化
-		{
-			if (root == nullptr)return;
-			stack<ThreadNode<T>*>S;
-			S.push(root);
-			bool ispush = true;
-			ThreadNode<T>* pre = nullptr;
-			while (!S.empty())
-			{
-				ThreadNode<T>* p = S.top();
-				if (p->left() && ispush)
-					S.push(p->left());
-				else
-				{
-					ispush = false;
-					S.pop();
-					//thread线索化
-					if (pre && pre->right() == nullptr)
-					{
-						pre->rchild = p;
-						pre->rtag = true;//是线索
-					}
-					if (p->left() == nullptr)
-					{
-						p->lchild = pre;
-						p->ltag = true;//是线索
-					}
-					if (p->right())
-					{
-						ispush = true;
-						S.push(p->right());
-					}
-					pre = p;
-				}
-			}
-			pre->rtag = true;
-		}
+		void InThread();//中序线索化
 		iterator begin() { return iterator(getfirstnode(root)); }
 		iterator end() { return iterator(nullptr); }
 		iterator last() { return iterator(getlastnode(root)); }
-		void Insert(const T& value, const std::string& op = "") { insert<T, ThreadNode<T>>(value, root, op); }
+		void insert(const T& value, const std::string& op = "") { Insert<T, ThreadNode<T>>(value, root, op); }
 	};
 	
 
@@ -293,21 +254,23 @@ namespace DSL
 void btree_insert_test()
 {
 	DSL::BTree<char>T;
-	T.Insert('A');
-	T.Insert('B',"L");
-	T.Insert('C',"R");
+	T.insert('A');
+	T.insert('B', "L");
+	T.insert('C', "R");
+	T.insert('D', "LL");
+	T.insert('E', "LR");
 	T.InOrder();
 }
 
 void thread_tree_insert_test()
 {
 	DSL::ThreadTree<char>T;
-	T.Insert('A');
-	T.Insert('B', "L");
-	T.Insert('C', "R");
-	T.Insert('D', "LL");
-	T.Insert('E', "LR");
-	T.Insert('F', "RR");
+	T.insert('A');
+	T.insert('B', "L");
+	T.insert('C', "R");
+	T.insert('D', "LL");
+	T.insert('E', "LR");
+	T.insert('F', "RR");
 	T.InThread();
 	for (auto it = T.last(); it != T.end(); --it)
 		std::cout << *it << " ";

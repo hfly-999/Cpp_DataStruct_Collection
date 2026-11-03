@@ -107,7 +107,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 | 顺序表 `vector` | `myvector.h` / `.cpp` | 🚧 **可用但待打磨**：原始内存分配 + placement new、默认 / `initializer_list` / 拷贝构造、拷贝赋值（含自赋值保护）；`insert`（任意位置、自动扩容）/ `erase` / `pop_back` / `push_back` / `push_front` / `clear` / `operator[]` / `front` / `back` / `size` / `capacity` / `empty` / `begin` / `end`；`reserve` / `swap` / `operator==` / `resize` 尚缺 |
 | 栈适配器 `stack` | `mystack.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::vector`；`push` / `pop` / `top` / `empty` / `size` |
 | 队列适配器 `queue` | `myqueue.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::list`；`push` / `pop` / `front` / `back` / `empty` / `size` |
-| 字符串 `String` | `String.h` / `.cpp` | ✅ 已实现：BF 与 KMP 子串匹配（含 `next` / `nextval` 数组） |
+| 字符串 `String` | `String.h` / `.cpp` | ✅ **可用**：底层是 `DSL::vector<char>`（自己不碰 `new` / `delete`）；`const char*` / `std::string` / 拷贝构造；`begin` / `end`（各两个 const 版本，返回 `char*`）、`operator[]`（带越界 `assert`）、`size` / `capacity` / `empty`；`BF` / `KMP` 子串匹配 + `Getnext` / `Getnextval` |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
 | 二叉树 `BTree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构同样用层次遍历删除，深树不会爆栈 |
 | 线索二叉树 `ThreadTree` | `Tree.h` / `.inl` | ✅ **可用**：共用同一套建树逻辑 + `InThread()` 中序线索化；`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode` 四个导航函数；**`iterator` 支持 `++` / `--` 双向遍历，中序不再用栈** |
@@ -117,6 +117,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 - **`list` 双向循环链表 + 单哨兵**：空表时 `Head` 自指，插入只有「在某个节点之前插入」一种情况，不需要为首尾写特例；`iterator` 与 `const_iterator` 是两个独立类，唯一区别是 `operator*` 返回 `type&` 还是 `const type&`；`check()` 在 Debug 下校验节点数、双向指针一致性和环闭合
 - **`vector` 原始内存 + placement new**：`::operator new` 只申请字节不构造对象，`[0, size)` 是活对象、`[size, capacity)` 是未构造内存；扩容按 1.5 倍增长；`insert` 先算下标再扩容，只构造一次、其余拷贝赋值，不会析构容器内已有元素
 - **`stack` / `queue` 容器适配器**：两者都不实现存储，只持有一个容器（**组合而非继承**）；容器作为模板参数，默认值分别是 `DSL::vector` 与 `DSL::list`，因此底层容器的 `insert` / `begin` / `operator[]` 不会泄漏到适配器接口上
+- **`String` 把内存管理整个交给 `vector<char>`**：类里只有一个 `vector<char>` 成员，扩容 / 构造 / 析构 / 深拷贝全部复用容器，`String` 自己不碰 `new` / `delete`；拷贝构造只有 `: string(obj.string)` 一行；`begin` / `end` 直接透传成 `char*`
 - **`Tree` 节点只存数据、操作全非递归**：`BNode` 只保留 `val` / `lchild` / `rchild`，递归析构、递归拷贝构造、递归赋值都不再挂在节点上；`friend class BTree<T>` 显式声明「只有树能碰节点私有字段」；四种遍历用显式 `stack` / `queue` 实现，整棵树的删除用层次遍历，因此再深的树也不会爆栈
 - **`ThreadTree` 线索化把栈从遍历里拿掉**：`InThread()` 在已建好的树上跑一遍中序，用 `pre` 指针把空指针改成前驱 / 后继并置 tag；之后中序遍历顺着线索走，不再需要 O(h) 的栈。四个导航函数（`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode`）构成 `iterator` 的 `++` / `--` 骨架。**同一个 `ThreadNode` 有两套指针语义**（`ltag` 为真时 `lchild` 是前驱而不是孩子），所以删除必须走查 tag 的 `delete_thread_tree`
 
@@ -133,6 +134,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 
 ### 不足
 
+- `String` 的 `Getnext()` / `Getnextval()` 返回裸 `size_t*`，所有权不明确（调用方需自己 `delete[]`），改成返回 `DSL::vector<size_t>` 可消除
 - `vector` 缺 `reserve` / `swap` / `operator==` / `resize` / `data()`，且要求元素可默认构造
 - `list` 迭代器缺 `operator->` 和 5 个类型别名，暂时不能配合标准算法
 - `stack` / `queue` 缺 `#pragma once`，`size()` 未加 `const`，`stack::push` 按值传参
@@ -191,14 +193,14 @@ Cpp_DataStruct_Collection/
 │   ├── String.h / String.cpp
 │   ├── main.cpp
 │   └── Cpp_DataStruct_2026_5_22.sln / .vcxproj / .filters / .user
-└── V3.0/                     # 2026-08-14，26 个文件（容器为主，当前主力）
+└── V3.0/                     # 2026-08-14，25 个文件（容器为主，当前主力）
     ├── README.md
     ├── Define.h / Include.h
     ├── mylist.h / .inl / .cpp
     ├── myvector.h / .cpp
     ├── mystack.h             # stack 适配器，默认底层 vector
     ├── myqueue.h             # queue 适配器，默认底层 list
-    ├── String.h / .inl / .cpp
+    ├── String.h / .cpp
     ├── Unique_ptr.h / .cpp
     ├── Tree.h / .inl / .cpp
     ├── AAAmain.cpp
