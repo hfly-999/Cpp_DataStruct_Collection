@@ -21,7 +21,7 @@
 | 顺序表 `vector` | `myvector.h` / `.cpp` | 🚧 **可用但待打磨**：原始内存分配（`::operator new` + placement new）、默认 / `initializer_list` / 拷贝构造、拷贝赋值（含自赋值保护）；`insert`（任意位置，容量不足自动扩容）/ `erase`（单点 + 区间）/ `pop_back` / `push_back` / `push_front` / `clear` / `operator[]` / `front` / `back` / `size` / `capacity` / `empty` / `begin` / `end`（后四者各两个 const 版本）；`reserve` / `swap` / `operator==` / `resize` 尚缺 |
 | 栈适配器 `stack` | `mystack.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::vector`；`push` / `pop` / `top` / `empty` / `size` |
 | 队列适配器 `queue` | `myqueue.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::list`；`push` / `pop` / `front` / `back` / `empty` / `size` |
-| 字符串 `String` | `String.h` / `.cpp` | ✅ **可用**：底层是 `DSL::vector<char>`（自己不碰 `new` / `delete`）；`const char*` / `std::string` / 拷贝构造；`begin` / `end`（各两个 const 版本，返回 `char*`）、`operator[]`（带 `assert` 越界检查）、`size` / `capacity` / `empty`；`BF` / `KMP` 子串匹配 + `Getnext` / `Getnextval` |
+| 字符串 `String` | `String.h` / `.cpp` | ✅ **可用**：底层是 `DSL::vector<char>`（自己不碰 `new` / `delete`）；`const char*` / `std::string` / `initializer_list` / 拷贝构造、拷贝赋值；`begin` / `end`（各两个 const 版本，返回 `char*`）、`operator[]`（带 `assert` 越界检查）、`size` / `capacity` / `empty`；`BF` / `KMP` 子串匹配 + `Getnext` / `Getnextval`（返回 `vector<size_t>`） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
 | 二叉树 `BTree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构用层次遍历删除，深树不爆栈 |
 | 线索二叉树 `ThreadTree` | `Tree.h` / `.inl` | ✅ **可用**：共用同一套建树逻辑 + `InThread()` 中序线索化；`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode` 四个导航函数；**`iterator` 支持 `++` / `--` 双向遍历，中序不再用栈** |
@@ -55,8 +55,11 @@
 
 - 整个类只有**一个成员**：`DSL::vector<char> string`。扩容、构造、析构、深拷贝全部复用 `vector`，`String` 自己**不碰 `new` / `delete`**
 - 因此拷贝构造只需要 `: string(obj.string)` 一行，析构直接 `= default` —— 深拷贝的正确性由 `vector` 保证，不在 `String` 里重写一遍
+- `operator=` 是显式的 `String& operator=(const String&)`，内部交给 `vector<char>::operator=`（它自带自赋值保护）。**必须写 `return *this;`** —— 非 `void` 函数走到末尾而不返回值是未定义行为，`a = b = c` 会拿到一个垃圾引用
+- 三类构造：`String("abc")`、`String(std::string)`、`String{'a','b','c'}`（`initializer_list` 直接转交给 `vector` 的同名构造）
 - `begin()` / `end()` 直接返回 `vector<char>::begin()` / `end()`（也就是 `char*`），所以范围 `for` 可以直接用
 - `operator[]` 里带 `assert(index < size())`，Debug 下越界会立刻断在出错的那一行，而不是跑到别处才崩
+- `Getnext()` / `Getnextval()` 返回 `DSL::vector<size_t>` 而不是裸指针 —— `next` 数组的生命周期跟着返回值走，调用方不需要（也无法）`delete[]`
 - `BF` 是暴力匹配；`KMP` 用 `Getnext` / `Getnextval` 求出的数组跳转。两者都返回子串在母串中的首位置
 
 ### `stack` / `queue`：容器适配器
@@ -112,16 +115,14 @@
 
 ### `stack` / `queue`
 
-- 两个头文件都缺 `#pragma once`，重复包含会重定义
-- `size()` 未声明为 `const`（`empty()` 是 `const`，不一致）
-- `stack::push` 按值传参，应为 `const Type&`
 - `stack::top()` 用 `*(c.end() - 1)` 实现，**隐含要求底层容器支持随机访问** —— 换成 `list` 会编不过，这一点应在注释里写明
+- `queue::back()` 同样用 `*(--c.end())`，也要求随机访问
 
 ### `String`
 
-- `Getnext()` / `Getnextval()` 返回裸 `size_t*`，**所有权不明确** —— 调用方必须自己 `delete[]`，忘记就泄漏。改成返回 `DSL::vector<size_t>` 即可彻底消除
-- 没有显式声明 `operator=`：隐式生成的版本会调用 `vector<char>::operator=`，目前正确，但与「显式写了拷贝构造」不对称，容易被误以为不可拷贝
-- 只支持 `const char*` 与 `std::string` 构造，没有 `initializer_list` 与「长度 + 字符」构造
+- 仍缺「长度 + 字符」构造（`String(size_t n, char c)`）
+- 没有 `c_str()` / `data()`，无法直接交给 C 接口
+- `KMP` 每次调用都重新求一遍 `nextval`；短串无所谓，长文本反复匹配时应把 `nextval` 缓存到对象里
 
 ### `Tree` / `ThreadTree`
 

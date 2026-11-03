@@ -107,7 +107,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 | 顺序表 `vector` | `myvector.h` / `.cpp` | 🚧 **可用但待打磨**：原始内存分配 + placement new、默认 / `initializer_list` / 拷贝构造、拷贝赋值（含自赋值保护）；`insert`（任意位置、自动扩容）/ `erase` / `pop_back` / `push_back` / `push_front` / `clear` / `operator[]` / `front` / `back` / `size` / `capacity` / `empty` / `begin` / `end`；`reserve` / `swap` / `operator==` / `resize` 尚缺 |
 | 栈适配器 `stack` | `mystack.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::vector`；`push` / `pop` / `top` / `empty` / `size` |
 | 队列适配器 `queue` | `myqueue.h` | ✅ **可用**：容器模板参数化，默认底层 `DSL::list`；`push` / `pop` / `front` / `back` / `empty` / `size` |
-| 字符串 `String` | `String.h` / `.cpp` | ✅ **可用**：底层是 `DSL::vector<char>`（自己不碰 `new` / `delete`）；`const char*` / `std::string` / 拷贝构造；`begin` / `end`（各两个 const 版本，返回 `char*`）、`operator[]`（带越界 `assert`）、`size` / `capacity` / `empty`；`BF` / `KMP` 子串匹配 + `Getnext` / `Getnextval` |
+| 字符串 `String` | `String.h` / `.cpp` | ✅ **可用**：底层是 `DSL::vector<char>`（自己不碰 `new` / `delete`）；`const char*` / `std::string` / `initializer_list` / 拷贝构造、拷贝赋值；`begin` / `end`（各两个 const 版本，返回 `char*`）、`operator[]`（带越界 `assert`）、`size` / `capacity` / `empty`；`BF` / `KMP` 子串匹配 + `Getnext` / `Getnextval`（返回 `vector<size_t>`） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
 | 二叉树 `BTree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构同样用层次遍历删除，深树不会爆栈 |
 | 线索二叉树 `ThreadTree` | `Tree.h` / `.inl` | ✅ **可用**：共用同一套建树逻辑 + `InThread()` 中序线索化；`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode` 四个导航函数；**`iterator` 支持 `++` / `--` 双向遍历，中序不再用栈** |
@@ -134,10 +134,10 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 
 ### 不足
 
-- `String` 的 `Getnext()` / `Getnextval()` 返回裸 `size_t*`，所有权不明确（调用方需自己 `delete[]`），改成返回 `DSL::vector<size_t>` 可消除
+- `String` 仍缺「长度 + 字符」构造，也没有 `c_str()` / `data()`，暂时无法直接交给 C 接口
 - `vector` 缺 `reserve` / `swap` / `operator==` / `resize` / `data()`，且要求元素可默认构造
 - `list` 迭代器缺 `operator->` 和 5 个类型别名，暂时不能配合标准算法
-- `stack` / `queue` 缺 `#pragma once`，`size()` 未加 `const`，`stack::push` 按值传参
+- `stack::top()` / `queue::back()` 用 `*(c.end() - 1)` 实现，隐含要求底层容器支持随机访问（换成 `list` 会编不过）
 - `Tree` / `ThreadTree`：`insert` 的回滚路径存在 use-after-free（待修）；`InThread()` 只能调用一次（缺 `threaded` 标志）；`delete_tree` 与 `delete_thread_tree` 仍是两份几乎相同的代码
 - `Tree` 的 `Insert(value, path)` 用 `"l"/"r"` 字符串描述插入路径，更像「按图纸建树」而不是「按序插入」；`BNode::visit()` 内部直接写 `std::cout`，要求元素可流输出
 - `ThreadTree::iterator` 缺 `const_iterator`，`operator*` 返回 `T&`（const 迭代器也能改值），比较运算符未声明 `const`

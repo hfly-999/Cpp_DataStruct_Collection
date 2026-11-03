@@ -2,22 +2,22 @@
 namespace DSL
 {
 
-	size_t* String::Getnext()const
+	vector<size_t> String::Getnext()const
 	{
-		size_t* PM = new size_t[string.size()];//部分匹配值,记得被回收
-		PM[0] = 0;
+		vector<size_t> PM;//部分匹配值,记得被回收
+		PM.push_back(0);
 		size_t count = 0;//最长公共前后缀
 		for (auto it = begin()+1; it != end(); )
 		{
 			if (*it == string[count])
 			{
-				PM[it - begin()] = count;
+				PM.push_back(count);
 				++it;
 				++count;
 			}
 			else if (count == 0)
 			{
-				PM[it - begin()] = count;
+				PM.push_back(count);
 				++it;
 			}
 			else
@@ -32,9 +32,9 @@ namespace DSL
 		return PM;
 	}
 
-	size_t* String::Getnextval()const
+	vector<size_t> String::Getnextval()const
 	{
-		size_t* next = Getnext();
+		vector<size_t> next = Getnext();
 		for (size_t i = 1; i < size(); ++i)
 			while (string[i] == string[next[i]] && next[i] != 0)next[i] = next[next[i]];
 		return next;
@@ -61,7 +61,7 @@ namespace DSL
 	
 	size_t String::KMP(const String& son)const
 	{
-		size_t *nextval=son.Getnextval();
+		vector<size_t>nextval=son.Getnextval();
 		auto it_son = son.begin();
 		for (auto it = begin(); it != end(); )
 		{
