@@ -108,6 +108,17 @@
 	stack/queue的size()补充了const,与empty()保持一致,const对象也能调用
 	stack::push的参数从按值传递改为const Type&,少一次拷贝
 	myqueue.h移除了不再需要的myvector.h包含(默认底层是list,用不到vector)
+2026.11.4
+	修复了ThreadTree::const_iterator的四处错误,const_iterator现在可以正常实例化:
+		operator++(int)/operator--(int)的局部变量与返回值从iterator改为const_iterator
+		比较运算符的形参从const iterator&改为const const_iterator&
+	新增HuffmanTree(哈夫曼树)与HNode(哈夫曼树节点):
+		HNode只存权重we/字符val/左右孩子,拷贝构造与拷贝赋值均=delete
+		HuffmanTree(const String&)统计字符频次,用堆反复合并出树
+		(建树逻辑还在开发中,尚未提供编码表与译码接口)
+		vector的析构去掉了virtual(不再需要多态删除)
+		vector新增reverse(size_t n),按指定容量重新申请内存
+		(注意:它会析构全部元素但不重置Size,见README待改进)
 
 	
 	

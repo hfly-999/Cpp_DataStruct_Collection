@@ -29,7 +29,6 @@ namespace DSL
 			{
 				push_back(*it);
 			}
-
 		}
 		//拷贝构造
 		vector(const vector& obj) :
@@ -46,7 +45,7 @@ namespace DSL
 
 
 		//虚析构
-		virtual ~vector()
+		~vector()
 		{
 			check();
 			for (size_t i = 0; i < Size; i++)
@@ -190,7 +189,15 @@ namespace DSL
 				erase(first);
 		}
 
-
+		void reverse(size_t n)
+		{
+			Capacity = n;//重新申请容量
+			Type* new_memory = (Type*)::operator new(sizeof(Type) * Capacity);//申请新内存
+			for (size_t i = 0; i < Size; i++)
+				Data[i].~Type();//顺序析构
+			::operator delete(Data);
+			Data = new_memory;
+		}
 		
 	private:
 
@@ -204,7 +211,7 @@ namespace DSL
 		void reallocate()
 		{
 			Capacity = calcapacity(Capacity);//重新申请更大容量,倍率1.5
-			Type* new_memory = (Type*)::operator new(sizeof(Type) * Capacity);//申请新内存
+			Type* new_memory = (Type*)::operator new(sizeof(Type) * Capacity);//先申请新内存
 			for (size_t i = 0; i < Size; i++)
 			{
 				new (new_memory + i)Type(Data[i]);//在内存上进行拷贝构造
@@ -213,7 +220,7 @@ namespace DSL
 			{
 				Data[i].~Type();//顺序析构
 			}
-			::operator delete(Data);
+			::operator delete(Data);//后释放旧内存
 			Data = new_memory;
 
 		}

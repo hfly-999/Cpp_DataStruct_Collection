@@ -14,12 +14,15 @@
 #include"String.h"
 #include"mystack.h"
 #include"myqueue.h"
+#include<queue>
 namespace DSL
 {
 	template<typename T>class BTree;
 	template<typename T>class ThreadTree;
 	template<typename T>class BNode;
 	template<typename T>class ThreadNode;
+	class HNode;
+	class HuffmanTree;
 	/*--------------------------------------------------------------------
 	*
 	*  一.函数
@@ -150,7 +153,7 @@ namespace DSL
 	{
 		if (root == nullptr)return nullptr;
 		ThreadNode<T>* ret = root;
-		while (ret->get_rtag() == false && ret->right())
+		while (ret->get_rtag()==false&&ret->right())
 			ret = ret->right();
 		return ret;
 	}
@@ -203,11 +206,29 @@ namespace DSL
 		ThreadNode() :val(T()), ltag(false), rtag(false), lchild(nullptr), rchild(nullptr) {}
 		ThreadNode(const ThreadNode& rhs) = delete;				//删除拷贝构造
 		ThreadNode& operator=(const ThreadNode& rhs) = delete;	//删除赋值构造
-		ThreadNode<T>* left() const { return lchild; }
-		ThreadNode<T>* right()const { return rchild; }
+		ThreadNode<T>* left() const { return lchild; }			//获得节点的左孩子,注意,左孩子可能是线索
+		ThreadNode<T>* right()const { return rchild; }			//获得节点的右孩子,注意,右孩子可能是线索
 		bool get_ltag() const { return ltag; }
 		bool get_rtag() const { return rtag; }
 
+	};
+	//huffmantree
+	class HNode
+	{
+		int we;
+		char val;
+		HNode* lchild;
+		HNode* rchild;
+		friend class HuffmanTree;
+	public:
+		HNode(int we = 0, char value = '\0', HNode* lchild = nullptr, HNode* rchild = nullptr)
+				:we(we), val(value), lchild(lchild), rchild(rchild) {}
+		HNode(const HNode& rhs) = delete;				//删除拷贝构造
+		HNode& operator=(const HNode& rhs) = delete;	//删除拷贝析构
+		HNode* left()const { return lchild; }			//获得左孩子指针
+		HNode* right()const { return rchild; }			//获得右孩子指针
+		int weight()const { return we; }				//获得节点权重
+	
 	};
 /*--------------------------------------------------------------------
 *
@@ -259,11 +280,11 @@ namespace DSL
 			const_iterator(ThreadNode<T>* p) :ptr(p) {}
 			const T& operator*()const { return ptr->val; }//*it
 			const_iterator& operator++() { ptr = getnextnode(ptr); return *this; }//++it
-			const_iterator operator++(int) { iterator old(*this); ptr = getnextnode(ptr); return old; }//it++
+			const_iterator operator++(int) { const_iterator old(*this); ptr = getnextnode(ptr); return old; }//it++
 			const_iterator& operator--() { ptr = getprenode(ptr); return *this; }//--it
-			const_iterator operator--(int) { iterator old(*this); ptr = getprenode(ptr); return old; }//it--
-			bool operator==(const iterator& rhs)const { return ptr == rhs.ptr; }
-			bool operator!=(const iterator& rhs)const { return !(*this == rhs); }
+			const_iterator operator--(int) { const_iterator old(*this); ptr = getprenode(ptr); return old; }//it--
+			bool operator==(const const_iterator& rhs)const { return ptr == rhs.ptr; }
+			bool operator!=(const const_iterator& rhs)const { return !(*this == rhs); }
 		};
 
 		ThreadTree() :root(nullptr) {}
@@ -283,12 +304,39 @@ namespace DSL
 
 		void insert(const T& value, const std::string& op = "") { Insert<T, ThreadNode<T>>(value, root, op); }
 	};
+	//huffmanTree
+	class HuffmanTree
+	{
+		vector<size_t>hash_list;
+		vector<String>translate_list;//翻译表
+		HNode* root;//哈夫曼树的根节点
+	public:
+		HuffmanTree(const String& str) :hash_list(),translate_list(), root(nullptr)
+		{
+			for (auto it = str.begin(); it != str.end(); ++it)
+				hash_list[*it]++;//建立哈希表
+			std::priority_queue<HNode*>heap;
+			for (auto it = hash_list.begin(); it != hash_list.end(); ++it)
+				if (*it != 0)
+					heap.push(new HNode(*it, it - hash_list.begin()));//所有节点入堆
+			while (heap.size() != 1)
+			{
+				HNode* lt = heap.top();
+				heap.pop();
+				HNode* rt = heap.top();
+				heap.pop();
+				heap.push(new HNode(lt->weight() + rt->weight(), '\0', lt, rt));//选用两小造新树
+			}
+			root = heap.top();
+			
+		}
+	};
 /*---------------------------------------------------------------------------------------------------------------
 * 
 *	四.测试用函数
 * 
 * 
-*----------------------------------------------------------------------------------------------------------------*/
+*---------------------------------------------------------------------------------------------------------------*/
 
 	void btree_insert_test_1()
 	{

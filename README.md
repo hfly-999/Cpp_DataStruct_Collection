@@ -110,7 +110,8 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 | 字符串 `String` | `String.h` / `.cpp` | ✅ **可用**：底层是 `DSL::vector<char>`（自己不碰 `new` / `delete`）；`const char*` / `std::string` / `initializer_list` / 拷贝构造、拷贝赋值；`begin` / `end`（各两个 const 版本，返回 `char*`）、`operator[]`（带越界 `assert`）、`size` / `capacity` / `empty`；`BF` / `KMP` 子串匹配 + `Getnext` / `Getnextval`（返回 `vector<size_t>`） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
 | 二叉树 `BTree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构同样用层次遍历删除，深树不会爆栈 |
-| 线索二叉树 `ThreadTree` | `Tree.h` / `.inl` | ✅ **可用**：共用同一套建树逻辑 + `InThread()` 中序线索化；`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode` 四个导航函数；**`iterator` 支持 `++` / `--` 双向遍历，中序不再用栈**；`DeThread()` 去线索化，把树还原成普通二叉树 |
+| 线索二叉树 `ThreadTree` | `Tree.h` / `.inl` | ✅ **可用**：共用同一套建树逻辑 + `InThread()` 中序线索化；`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode` 四个导航函数；**`iterator` / `const_iterator` 支持 `++` / `--` 双向遍历，中序不再用栈**；`DeThread()` 去线索化，把树还原成普通二叉树 |
+| 哈夫曼树 `HuffmanTree` | `Tree.h` / `.inl` | 🚧 **开发中**：`HuffmanTree(const String&)` 统计字符频次后用 `std::priority_queue<HNode*>` 反复合并出树；`HNode` 只存权重 / 字符 / 左右孩子。编码表、译码、遍历接口尚未写出，构造函数本身也还存在越界与比较器问题（见「不足」） |
 
 ### 实现要点
 
@@ -120,6 +121,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 - **`String` 把内存管理整个交给 `vector<char>`**：类里只有一个 `vector<char>` 成员，扩容 / 构造 / 析构 / 深拷贝全部复用容器，`String` 自己不碰 `new` / `delete`；拷贝构造只有 `: string(obj.string)` 一行；`begin` / `end` 直接透传成 `char*`
 - **`Tree` 节点只存数据、操作全非递归**：`BNode` 只保留 `val` / `lchild` / `rchild`，递归析构、递归拷贝构造、递归赋值都不再挂在节点上；`friend class BTree<T>` 显式声明「只有树能碰节点私有字段」；四种遍历用显式 `stack` / `queue` 实现，整棵树的删除用层次遍历，因此再深的树也不会爆栈
 - **`ThreadTree` 线索化把栈从遍历里拿掉**：`InThread()` 在已建好的树上跑一遍中序，用 `pre` 指针把空指针改成前驱 / 后继并置 tag；之后中序遍历顺着线索走，不再需要 O(h) 的栈。四个导航函数（`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode`）构成 `iterator` 的 `++` / `--` 骨架。**同一个 `ThreadNode` 有两套指针语义**（`ltag` 为真时 `lchild` 是前驱而不是孩子），所以删除必须走查 tag 的 `delete_thread_tree`；`DeThread()` 则反向把 tag 复位、线索指针置空，让同一节点类型在线索态与普通二叉树态之间切换
+- **`HuffmanTree` 用最小堆反复合并**：先扫一遍字符串统计频次，把频次非零的字符各造一个叶子丢进堆，再循环「弹两个、造父节点、压回去」直到只剩一个节点。叶子存原字符、内部节点字符位置填 `'\0'`，编码靠「左 0 右 1」而不是节点自记；`HNode` 的拷贝构造与拷贝赋值都 `= delete`，避免拷出两个「根」
 
 ### 特点
 
@@ -135,12 +137,13 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 ### 不足
 
 - `String` 仍缺「长度 + 字符」构造，也没有 `c_str()` / `data()`，暂时无法直接交给 C 接口
-- `vector` 缺 `reserve` / `swap` / `operator==` / `resize` / `data()`，且要求元素可默认构造
+- `vector` 缺 `reserve` / `swap` / `operator==` / `resize` / `data()`，且要求元素可默认构造；新增的 `reverse(size_t n)` 会析构全部元素却不重置 `Size`，名字也与 `reserve` 只差一个字母
 - `list` 迭代器缺 `operator->` 和 5 个类型别名，暂时不能配合标准算法
 - `stack::top()` / `queue::back()` 用 `*(c.end() - 1)` 实现，隐含要求底层容器支持随机访问（换成 `list` 会编不过）
 - `Tree` / `ThreadTree`：`insert` 回滚路径已重写（先摘父链接、再删除、`root` 悬空时置空），但尚未在 ASan / CRT 下复验；`InThread()` 只能调用一次（缺 `threaded` 标志）；`DeInthread` 是递归实现，深树会爆栈；`delete_tree` 与 `delete_thread_tree` 仍是两份几乎相同的代码
 - `Tree` 的 `Insert(value, path)` 用 `"l"/"r"` 字符串描述插入路径，更像「按图纸建树」而不是「按序插入」；`BNode::visit()` 内部直接写 `std::cout`，要求元素可流输出
-- 写在 `Tree.h` 里的四个测试函数是非模板自由函数，被两个以上翻译单元包含就会链接期重复定义；`ThreadTree::const_iterator` 已写出但返回类型与比较运算符参数写错，一旦实例化就编不过
+- 写在 `Tree.h` 里的四个测试函数是非模板自由函数，被两个以上翻译单元包含就会链接期重复定义
+- `HuffmanTree`：`hash_list` 是空的 `vector<size_t>`，构造里没扩容就 `hash_list[*it]++`，Debug 下断言直接触发、Release 下越界写；`std::priority_queue<HNode*>` 用默认 `less<HNode*>`，按**地址**而非 `weight()` 排序，弹出的不是最小的两个；空串会让 `heap.top()` 作用在空容器上；无析构函数，节点全部泄漏；内部用了 STL 的 `std::priority_queue`，与「不依赖 STL 容器」的前提不一致
 - `Unique_ptr` 未完成移动语义
 
 ---
