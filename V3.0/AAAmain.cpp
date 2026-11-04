@@ -1,4 +1,4 @@
-﻿
+﻿#include"Tree.h"
 #include"String.h"
 
 
@@ -11,8 +11,6 @@ void warnness()
 }
 int main()
 {
-	String str1 = "123456789JKLOVE";
-	String str2 = "789";
-	std::cout << str1.KMP(str2);
+	btree_insert_test_3();
 
 }

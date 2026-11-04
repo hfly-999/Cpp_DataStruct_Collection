@@ -110,7 +110,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 | 字符串 `String` | `String.h` / `.cpp` | ✅ **可用**：底层是 `DSL::vector<char>`（自己不碰 `new` / `delete`）；`const char*` / `std::string` / `initializer_list` / 拷贝构造、拷贝赋值；`begin` / `end`（各两个 const 版本，返回 `char*`）、`operator[]`（带越界 `assert`）、`size` / `capacity` / `empty`；`BF` / `KMP` 子串匹配 + `Getnext` / `Getnextval`（返回 `vector<size_t>`） |
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
 | 二叉树 `BTree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构同样用层次遍历删除，深树不会爆栈 |
-| 线索二叉树 `ThreadTree` | `Tree.h` / `.inl` | ✅ **可用**：共用同一套建树逻辑 + `InThread()` 中序线索化；`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode` 四个导航函数；**`iterator` 支持 `++` / `--` 双向遍历，中序不再用栈** |
+| 线索二叉树 `ThreadTree` | `Tree.h` / `.inl` | ✅ **可用**：共用同一套建树逻辑 + `InThread()` 中序线索化；`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode` 四个导航函数；**`iterator` 支持 `++` / `--` 双向遍历，中序不再用栈**；`DeThread()` 去线索化，把树还原成普通二叉树 |
 
 ### 实现要点
 
@@ -119,7 +119,7 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 - **`stack` / `queue` 容器适配器**：两者都不实现存储，只持有一个容器（**组合而非继承**）；容器作为模板参数，默认值分别是 `DSL::vector` 与 `DSL::list`，因此底层容器的 `insert` / `begin` / `operator[]` 不会泄漏到适配器接口上
 - **`String` 把内存管理整个交给 `vector<char>`**：类里只有一个 `vector<char>` 成员，扩容 / 构造 / 析构 / 深拷贝全部复用容器，`String` 自己不碰 `new` / `delete`；拷贝构造只有 `: string(obj.string)` 一行；`begin` / `end` 直接透传成 `char*`
 - **`Tree` 节点只存数据、操作全非递归**：`BNode` 只保留 `val` / `lchild` / `rchild`，递归析构、递归拷贝构造、递归赋值都不再挂在节点上；`friend class BTree<T>` 显式声明「只有树能碰节点私有字段」；四种遍历用显式 `stack` / `queue` 实现，整棵树的删除用层次遍历，因此再深的树也不会爆栈
-- **`ThreadTree` 线索化把栈从遍历里拿掉**：`InThread()` 在已建好的树上跑一遍中序，用 `pre` 指针把空指针改成前驱 / 后继并置 tag；之后中序遍历顺着线索走，不再需要 O(h) 的栈。四个导航函数（`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode`）构成 `iterator` 的 `++` / `--` 骨架。**同一个 `ThreadNode` 有两套指针语义**（`ltag` 为真时 `lchild` 是前驱而不是孩子），所以删除必须走查 tag 的 `delete_thread_tree`
+- **`ThreadTree` 线索化把栈从遍历里拿掉**：`InThread()` 在已建好的树上跑一遍中序，用 `pre` 指针把空指针改成前驱 / 后继并置 tag；之后中序遍历顺着线索走，不再需要 O(h) 的栈。四个导航函数（`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode`）构成 `iterator` 的 `++` / `--` 骨架。**同一个 `ThreadNode` 有两套指针语义**（`ltag` 为真时 `lchild` 是前驱而不是孩子），所以删除必须走查 tag 的 `delete_thread_tree`；`DeThread()` 则反向把 tag 复位、线索指针置空，让同一节点类型在线索态与普通二叉树态之间切换
 
 ### 特点
 
@@ -138,9 +138,9 @@ C++ 数据结构项目合集，按编写时间归档，同一个项目从 C 风�
 - `vector` 缺 `reserve` / `swap` / `operator==` / `resize` / `data()`，且要求元素可默认构造
 - `list` 迭代器缺 `operator->` 和 5 个类型别名，暂时不能配合标准算法
 - `stack::top()` / `queue::back()` 用 `*(c.end() - 1)` 实现，隐含要求底层容器支持随机访问（换成 `list` 会编不过）
-- `Tree` / `ThreadTree`：`insert` 的回滚路径存在 use-after-free（待修）；`InThread()` 只能调用一次（缺 `threaded` 标志）；`delete_tree` 与 `delete_thread_tree` 仍是两份几乎相同的代码
+- `Tree` / `ThreadTree`：`insert` 回滚路径已重写（先摘父链接、再删除、`root` 悬空时置空），但尚未在 ASan / CRT 下复验；`InThread()` 只能调用一次（缺 `threaded` 标志）；`DeInthread` 是递归实现，深树会爆栈；`delete_tree` 与 `delete_thread_tree` 仍是两份几乎相同的代码
 - `Tree` 的 `Insert(value, path)` 用 `"l"/"r"` 字符串描述插入路径，更像「按图纸建树」而不是「按序插入」；`BNode::visit()` 内部直接写 `std::cout`，要求元素可流输出
-- `ThreadTree::iterator` 缺 `const_iterator`，`operator*` 返回 `T&`（const 迭代器也能改值），比较运算符未声明 `const`
+- 写在 `Tree.h` 里的四个测试函数是非模板自由函数，被两个以上翻译单元包含就会链接期重复定义；`ThreadTree::const_iterator` 已写出但返回类型与比较运算符参数写错，一旦实例化就编不过
 - `Unique_ptr` 未完成移动语义
 
 ---

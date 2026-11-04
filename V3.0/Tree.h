@@ -72,57 +72,70 @@ namespace DSL
 		if (root == nullptr)//树本来就是空
 			p = create_tree = root = new N();
 
-		for (auto it = op.begin(); it != op.end(); ++it)
+		for (auto it = op.begin(); it != op.end(); ++it)//遍历op
 		{
 			if (*it == 'l' || *it == 'L')
 			{
-				pre = p;
-				p = p->lchild;
-				if (p == nullptr)
+				pre = p;//记录父节点
+				p = p->lchild;//往左走
+				if (p == nullptr)//走到了空节点
 				{
-					p = new N();
+					p = new N();//新建节点
 					pre->lchild = p;//链接新节点
-					if (create_tree == nullptr)//如果还没有创造过树
+					if (create_tree == nullptr)//从来没有新建立过节点
 					{
-						pre_create_tree = pre;
 						create_tree = p;
+						pre_create_tree = pre;
 						create_dir_l = true;
 					}
 				}
 			}
 			else if (*it == 'r' || *it == 'R')
 			{
-				pre = p;
-				p = p->rchild;
+				pre = p;//记录父节点
+				p = p->rchild;//往右走
 				if (p == nullptr)
 				{
-					p = new N();
+					p = new N();//建立新节点
 					pre->rchild = p;//链接新节点
-					if (create_tree == nullptr)//如果还没有创造过树
+					if (create_tree == nullptr)//从来没有新建立过节点
 					{
-						pre_create_tree = pre;
-						create_tree = p;
-						create_dir_l = false;
+						create_tree = p;//记录新节点
+						pre_create_tree = pre;//记录新节点的父节点
+						create_dir_l = false;//记录方向
 					}
 				}
 			}
 			else//回滚
 			{
-				delete_tree<N>(create_tree);//删除被创造的树
-				if (pre_create_tree)
-				{
-					if (create_dir_l)
-						pre_create_tree->lchild = nullptr;
-					else
-						pre_create_tree->rchild = nullptr;
-				}
-				return false;
+				if (pre_create_tree)//新树有父节点
+					create_dir_l ? pre_create_tree->lchild = nullptr : pre_create_tree->rchild = nullptr;
+				else if (create_tree)//有创建过树,但是创建的树没有父节点
+					root = nullptr;
+				delete_tree<N>(create_tree);
+				return false;//提前返回
 			}
 		}
 		p->val = value;
 		return true;
 	}
 
+	template<typename T>void DeInthread(ThreadNode<T>* root)//去线索化
+	{
+		if (root == nullptr)return;
+		DeInthread(root->left());
+		if (root->get_ltag() == true)
+		{
+			root->ltag = false;
+			root->lchild = nullptr;
+		}
+		if (root->get_rtag() == true)
+		{
+			root->rtag = false;
+			root->rchild = nullptr;
+		}
+		DeInthread(root->right());
+	}
 
 	//中序下的迭代器移动
 	template<typename T>ThreadNode<T>* getfirstnode(ThreadNode<T>* root)
@@ -184,6 +197,7 @@ namespace DSL
 		ThreadNode* lchild;
 		ThreadNode* rchild;
 		template<typename T, typename N>friend bool Insert(const T& value, N*& root, const std::string& op);//给插入函数提供访问私有成员的权限
+		template<typename T>friend void DeInthread(ThreadNode* root);
 		friend class ThreadTree<T>;//给ThreadTree提供访问私有成员的权限
 	public:
 		ThreadNode() :val(T()), ltag(false), rtag(false), lchild(nullptr), rchild(nullptr) {}
@@ -229,51 +243,119 @@ namespace DSL
 			ThreadNode<T>* ptr;
 		public:
 			iterator(ThreadNode<T>* p) :ptr(p) {}
-			T& operator*() { return ptr->val; }//*it
+			T& operator*()const { return ptr->val; }//*it
 			iterator& operator++() { ptr = getnextnode(ptr); return *this; }//++it
 			iterator operator++(int) { iterator old(*this); ptr = getnextnode(ptr); return old; }//it++
 			iterator& operator--() { ptr = getprenode(ptr); return *this; }//--it
 			iterator operator--(int) { iterator old(*this); ptr = getprenode(ptr); return old; }//it--
-			bool operator==(const iterator& rhs) { return ptr == rhs.ptr; }
-			bool operator!=(const iterator& rhs) { return !(*this == rhs); }
+			bool operator==(const iterator& rhs)const { return ptr == rhs.ptr; }
+			bool operator!=(const iterator& rhs)const { return !(*this == rhs); }
 		};
+
+		class const_iterator
+		{
+			ThreadNode<T>* ptr;
+		public:
+			const_iterator(ThreadNode<T>* p) :ptr(p) {}
+			const T& operator*()const { return ptr->val; }//*it
+			const_iterator& operator++() { ptr = getnextnode(ptr); return *this; }//++it
+			const_iterator operator++(int) { iterator old(*this); ptr = getnextnode(ptr); return old; }//it++
+			const_iterator& operator--() { ptr = getprenode(ptr); return *this; }//--it
+			const_iterator operator--(int) { iterator old(*this); ptr = getprenode(ptr); return old; }//it--
+			bool operator==(const iterator& rhs)const { return ptr == rhs.ptr; }
+			bool operator!=(const iterator& rhs)const { return !(*this == rhs); }
+		};
+
 		ThreadTree() :root(nullptr) {}
 		ThreadTree(const ThreadTree& rhs) = delete;//禁用拷贝构造
 		ThreadTree& operator=(const ThreadTree& rhs) = delete;//禁用赋值构造
 		~ThreadTree() { delete_thread_tree<T>(root); }
 		void InThread();//中序线索化
-		iterator begin() { return iterator(getfirstnode(root)); }
-		iterator end() { return iterator(nullptr); }
-		iterator last() { return iterator(getlastnode(root)); }
+		void DeThread() { DeInthread(root); }
+
+		iterator		begin()		{ return iterator(getfirstnode(root)); }
+		iterator		end()		{ return iterator(nullptr); }
+		iterator		last()		{ return iterator(getlastnode(root)); }
+
+		const_iterator	begin()		const { return const_iterator(getfirstnode(root)); }
+		const_iterator	end()		const { return const_iterator(nullptr); }
+		const_iterator	last()		const { return const_iterator(getlastnode(root)); }
+
 		void insert(const T& value, const std::string& op = "") { Insert<T, ThreadNode<T>>(value, root, op); }
 	};
+/*---------------------------------------------------------------------------------------------------------------
+* 
+*	四.测试用函数
+* 
+* 
+*----------------------------------------------------------------------------------------------------------------*/
+
+	void btree_insert_test_1()
+	{
+		BTree<char>T;
+		T.insert('A', "==");
+		T.insert('B', "==");
+		T.insert('C', "==");
+		T.insert('D', "==");
+		T.insert('E', "==");
+		T.InOrder();
+	}
 	
+	void btree_insert_test_2()
+	{
+		BTree<char>T;
+		T.insert('A', "");
+		T.insert('B', "L");
+		T.insert('C', "R");
+		T.insert('D', "LL");
+		T.insert('E', "LR");
+		T.insert('F', "LLL");
+		T.insert('G', "LR*");
+		T.insert('G', "L*R");
+		T.insert('G', "*LR");
+		T.InOrder();
+	}
+
+	void btree_insert_test_3()
+	{
+		BTree<char>T;
+		T.insert('A', "LLL");
+		T.insert('B', "LLR");
+		T.insert('C', "LRL");
+		T.insert('D', "LRR");
+		T.insert('E', "RLL");
+		T.insert('F', "RLR");
+		T.insert('G', "RRL");
+		T.insert('H', "RRR");
+		T.insert('A', "L*L");
+		T.insert('B', "*LR");
+		T.insert('C', "LR*");
+		T.insert('D', "LR*");
+		T.insert('E', "R**");
+		T.insert('F', "R*R");
+		T.insert('G', "*RL");
+		T.insert('H', "***");
+		T.InOrder();
+	}
+
+	void thread_tree_insert_test()
+	{
+		ThreadTree<char>T;
+		T.insert('A');
+		T.insert('B', "L");
+		T.insert('C', "R");
+		T.insert('D', "LL");
+		T.insert('E', "LR");
+		T.insert('F', "RR");
+		T.InThread();
+		for (auto it = T.last(); it != T.end(); --it)
+			std::cout << *it << " ";
+	}
+
 
 };
 #include"Tree.inl"
-void btree_insert_test()
-{
-	DSL::BTree<char>T;
-	T.insert('A');
-	T.insert('B', "L");
-	T.insert('C', "R");
-	T.insert('D', "LL");
-	T.insert('E', "LR");
-	T.InOrder();
-}
 
-void thread_tree_insert_test()
-{
-	DSL::ThreadTree<char>T;
-	T.insert('A');
-	T.insert('B', "L");
-	T.insert('C', "R");
-	T.insert('D', "LL");
-	T.insert('E', "LR");
-	T.insert('F', "RR");
-	T.InThread();
-	for (auto it = T.last(); it != T.end(); --it)
-		std::cout << *it << " ";
-}
+
 
 
