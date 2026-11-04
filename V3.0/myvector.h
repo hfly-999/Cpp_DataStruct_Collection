@@ -197,6 +197,7 @@ namespace DSL
 				Data[i].~Type();//顺序析构
 			::operator delete(Data);
 			Data = new_memory;
+			Size = 0;
 		}
 		
 	private:

@@ -25,7 +25,7 @@
 | 唯一指针 `Unique_ptr` | `Unique_ptr.h` / `.cpp` | 🚧 未完成：缺移动语义、`release` / `reset` |
 | 二叉树 `BTree` | `Tree.h` / `.inl` / `.cpp` | ✅ **可用**：`Insert(value, path)` 按 `"l"/"r"` 路径建树；先序 / 中序 / 后序 / 层次遍历**全部非递归**（显式栈 / 队列）；析构用层次遍历删除，深树不爆栈 |
 | 线索二叉树 `ThreadTree` | `Tree.h` / `.inl` | ✅ **可用**：共用同一套建树逻辑 + `InThread()` 中序线索化；`getfirstnode` / `getlastnode` / `getnextnode` / `getprenode` 四个导航函数；**`iterator` / `const_iterator` 支持 `++` / `--` 双向遍历，中序不再用栈**；`DeThread()` 去线索化，把树还原成普通二叉树 |
-| 哈夫曼树 `HuffmanTree` | `Tree.h` / `.inl` | 🚧 **开发中**：`HuffmanTree(const String&)` 统计字符频次后用 `std::priority_queue<HNode*>` 反复合并出树；`HNode` 只存权重 / 字符 / 左右孩子。编码表、译码、遍历接口尚未写出，构造函数本身也还存在越界与比较器问题（见「待改进」） |
+| 哈夫曼树 `HuffmanTree` | `Tree.h` | ❌ **已移除，待重写**：原实现的构造函数在 `hash_list` 尚未扩容时就下标访问、`std::priority_queue<HNode*>` 按地址而非权重排序、空串会解引用空堆、且没有析构函数。类定义已从 `Tree.h` 删除，目前只留下 `HNode`；重写时按「待改进」里那份清单逐条避开 |
 
 > 原 `Stack.h` / `Queue.h` / `Stack.inl` / `Queue.inl` 已删除，由 `mystack.h` / `myqueue.h` 取代。
 
@@ -97,11 +97,12 @@
 - `iterator` 的 `++` / `--` 各自复用一个导航函数，`end()` 用 `nullptr` 表示「越界」，所以 `it != end()` 能自然终止
 - **同一个 `ThreadNode` 有两套指针语义**：`ltag == false` 时 `lchild` 是孩子，`ltag == true` 时它是前驱。因此删除必须走 `delete_thread_tree`（先查 tag），**不能**复用普通的 `delete_tree` —— 否则会把祖先当孩子 `delete`，直接 use-after-free
 - **去线索化（`DeThread` → `DeInthread`）**：反向操作 —— 遍历一遍，把 `ltag` / `rtag` 为真的节点复位为 `false`，并把那条线索指针置空。这样同一个节点类型可以在「线索态」和「普通二叉树态」之间来回切换
-- 去线索化递归用的是 `left()` / `right()`（返回**真孩子**）而不是 `lchild` / `rchild` —— 否则会顺着线索跳到祖先上去，跟 `delete_tree` 犯同一个错
+- 去线索化用 `left()` / `right()`（返回**真孩子**）判断能不能往下走，而不是直接信 `lchild` / `rchild` —— 否则会顺着线索跳到祖先上去，跟 `delete_tree` 犯同一个错
+- 去线索化是**显式栈的迭代版**，靠一个 `ispush` 标记区分「这一轮该往下压栈」还是「刚出栈、该处理当前节点」：压栈阶段只往左走，出栈阶段才复位 tag、再把右孩子压回去
 
-### `HuffmanTree`：用最小堆反复合并
+### `HuffmanTree`：设计记录（类已移除，下面是重写时要保留的思路）
 
-- `HNode` 只存 `we`（权重）/ `val`（字符）/ `lchild` / `rchild`，不留任何建树或编码逻辑；`friend class HuffmanTree` 是唯一的访问授权
+- `HNode` 只存 `we`（权重）/ `val`（字符）/ `lchild` / `rchild`，不留任何建树或编码逻辑
 - 建树流程：先扫一遍字符串统计每个字符的频次，把**频次非零**的字符各造一个叶子节点丢进堆，然后循环「弹出两个、造一个父节点、压回去」，直到堆里只剩一个节点，它就是 `root`
 - 叶子节点存原字符，合并出来的内部节点字符位置填 `'\0'` —— 编码时靠「往左走记 0、往右走记 1」区分，不依赖节点自己记编码
 - `HNode` 的拷贝构造与拷贝赋值都 `= delete`：树节点一旦被拷贝，父子指针就会指回原树，等于制造两个「根」
@@ -113,7 +114,8 @@
 ### `vector`
 
 - 缺 `reserve` / `swap` / `operator==` / `resize` / `data()`
-- 新增的 `reverse(size_t n)` **先析构全部 `Size` 个元素、再换内存，却没有把 `Size` 归零**：之后 `size()` 仍返回旧值、`operator[]` 的断言照样通过、析构时会对已销毁的对象再析构一遍。另外它的名字与标准库的 `reserve` 只差一个字母，行为却是「销毁全部元素 + 重设容量」
+- `reverse(size_t n)` 会**析构全部 `Size` 个元素**再换内存，语义上等于「清空 + 重设容量」，末尾已把 `Size` 归零；但它不保留任何元素，与标准库的 `reserve`（保留元素、只改容量）完全不同，名字却只差两个字母，调用时极易看错
+- 容量缩小时不检查 `n >= Size`（`Size` 已归零，所以当前不会破坏 `Capacity >= Size`，但语义上仍是一次「清空」）
 - `~vector()` 已去掉 `virtual`（不再需要多态删除）
 - `check()` 未声明为 `const`
 - 要求 `type` 可默认构造（`insert` 中的 `new (Data + size) type()`）；接入移动语义后可放宽
@@ -139,7 +141,7 @@
 
 - `insert` 的回滚路径已重写：**先摘父链接 → 再 `delete_tree` → 最后 `return false`**。当新建的树就是根（没有父节点）时，把 `root` 置空 —— 此前这种情况会让 `root` 悬空，析构时对已释放的根再删一次。**改动后尚未在 ASan / CRT 下正式复验**
 - **`InThread()` 只能调用一次**：重复线索化时 `lchild` 已指向前驱，遍历会跳到别的子树上去。目前没有 `threaded` 标志做保护
-- `DeInthread` 是**递归**实现，深树会爆栈 —— 与 `delete_tree` 的层次遍历思路不一致
+- `DeInthread` 已从递归改为**显式栈的迭代版**，深树不再爆栈；但它靠 `ispush` 标记驱动，控制流是「压栈阶段只往左、出栈阶段处理当前节点再压右孩子」，比 `delete_tree` 的层次遍历更难一眼看懂
 - 四个测试函数（`btree_insert_test_1/2/3`、`thread_tree_insert_test`）是**非模板自由函数，直接定义在 `Tree.h` 里**：一旦被两个以上翻译单元包含，链接期会重复定义。应加 `inline`，或声明留在 `.h`、定义移到 `.cpp`
 - `delete_tree` 与 `delete_thread_tree` 几乎是同一份代码，只差两个 tag 判断。如果让 `ThreadNode::left()` / `right()` 在 `ltag` / `rtag` 为真时返回 `nullptr`，再另配 `raw_left()` / `raw_right()` 供线索化使用，两份可以合并成一份
 - `iterator` 的 `operator*` 已随 `operator==` / `operator!=` 一起补上 `const`；`const_iterator` 的四处错误（`operator++(int)` / `operator--(int)` 的局部变量与返回值写成 `iterator`、比较运算符形参写成 `const iterator&`）也已修正，现在可以正常实例化
@@ -148,7 +150,7 @@
 - `BNode::visit()` 内部直接写 `std::cout`，隐含要求元素类型可流输出（装一个没有 `operator<<` 的 `struct` 会编不过）
 - `Tree.h` 顶部 `#include` 了 `mystack.h` / `myqueue.h`，即与「栈 / 队列用哪种容器实现」这件事耦合；更彻底的做法是把容器提成模板参数
 
-### `HuffmanTree`
+### `HuffmanTree`（类已移除，以下是有过的缺陷，重写时逐条避开）
 
 - **`hash_list[*it]++` 越界**：`hash_list` 是默认构造的 `vector<size_t>`，`size == 0`、`capacity == 0`、`Data == nullptr`；构造里没有先扩容就下标访问，`operator[]` 的 `assert(index < Size)` 在 Debug 下会立刻断在这里，Release 下是往空指针上写
 - **比较器比较的是指针地址**：`std::priority_queue<HNode*>` 用默认的 `less<HNode*>`，它按**地址大小**排序，而不是按 `weight()` —— 弹出的两个并不是权值最小的两个，建出来的不是哈夫曼树
@@ -156,6 +158,7 @@
 - `*it` 的类型是 `char`：若 `char` 为有符号、读到高位字节（≥ 0x80，中文 UTF-8 必现），转成 `size_t` 下标会得到极大值
 - `translate_list`（译码表）声明了但从未写入；`HuffmanTree` 没有析构函数，`new` 出来的 `HNode` 与 `root` 都不会释放
 - 内部依赖 `std::priority_queue`（新增了 `#include<queue>`），与本项目「不依赖 STL 容器」的前提不一致；要贯彻这一前提，需要自己写一个堆，或复用已有的 `vector` 手写 `push_heap` / `pop_heap`
+- 类删除后 `HNode` 仍留在 `Tree.h` 里，`friend class HuffmanTree;` 现在指向一个**不存在的类**（合法，只是引入了一个未定义的 `DSL::HuffmanTree`）；重写时这两处要么一起补上、要么一起删掉
 
 ## 目录约定
 
@@ -166,10 +169,10 @@
 ## 下一步
 
 - `Tree`：回滚路径改动后在 ASan / CRT 下复验；给 `InThread()` 加 `threaded` 标志，防止重复线索化
-- `Tree`：`DeInthread` 改成非递归（配合 `threaded` 标志）；合并 `delete_tree` / `delete_thread_tree`
+- `Tree`：合并 `delete_tree` / `delete_thread_tree`；给 `InThread()` 加 `threaded` 标志，防止重复线索化；把 `DeInthread` 的 `ispush` 标记式控制流改写成更直白的「先一路压左、出栈时处理、再转右」
 - `Tree`：测试函数加 `inline` 或移到 `.cpp`；`BTree::operator=` 的返回类型改回 `BTree&`
 - `Tree`：`Insert` 增加「按值有序插入」的重载；`visit()` 改为接受输出器，去掉对 `std::cout` 的硬依赖
-- `HuffmanTree`：`hash_list` 先扩容再下标访问；堆的比较器改成按 `weight()`；空串先判空；补析构函数释放节点；写出编码表与译码
+- `HuffmanTree`：按「待改进」清单从零重写 —— `hash_list` 先扩容再下标访问；堆的比较器改成按 `weight()`；空串先判空；补析构函数释放节点；写出编码表与译码；把 `std::priority_queue` 换成自己的堆
 - `vector`：补 `reserve` / `swap` / `operator==` / `resize`，并把 `reallocate` 抽成带参数的 `reallocate_to`
 - `list`：补 `operator->` 与 5 个迭代器类型别名
 - 学习并接入移动语义（`noexcept` 移动构造、`std::move_if_noexcept`）

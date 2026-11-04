@@ -22,7 +22,7 @@ namespace DSL
 	template<typename T>class BNode;
 	template<typename T>class ThreadNode;
 	class HNode;
-	class HuffmanTree;
+
 	/*--------------------------------------------------------------------
 	*
 	*  一.函数
@@ -126,18 +126,39 @@ namespace DSL
 	template<typename T>void DeInthread(ThreadNode<T>* root)//去线索化
 	{
 		if (root == nullptr)return;
-		DeInthread(root->left());
-		if (root->get_ltag() == true)
+		stack<ThreadNode<T>*>S;
+		S.push(root);
+		bool ispush = true;
+		while (!S.empty())
 		{
-			root->ltag = false;
-			root->lchild = nullptr;
+			ThreadNode<T>* p = S.top();
+			if (p->left() && p->get_ltag() == false && ispush)
+			{
+				S.push(p->left());
+			}
+			else
+			{
+				S.pop();
+				ispush = false;//出栈模式
+				//visit
+				if (p->get_ltag() == true)
+				{
+					p->ltag = false;
+					p->lchild = nullptr;
+				}
+				if (p->get_rtag() == true)
+				{
+					p->rtag = false;
+					p->rchild = nullptr;
+				}
+				//去线索化
+				if (p->right())
+				{
+					ispush = true;
+					S.push(p->right());
+				}
+			}
 		}
-		if (root->get_rtag() == true)
-		{
-			root->rtag = false;
-			root->rchild = nullptr;
-		}
-		DeInthread(root->right());
 	}
 
 	//中序下的迭代器移动
@@ -304,33 +325,7 @@ namespace DSL
 
 		void insert(const T& value, const std::string& op = "") { Insert<T, ThreadNode<T>>(value, root, op); }
 	};
-	//huffmanTree
-	class HuffmanTree
-	{
-		vector<size_t>hash_list;
-		vector<String>translate_list;//翻译表
-		HNode* root;//哈夫曼树的根节点
-	public:
-		HuffmanTree(const String& str) :hash_list(),translate_list(), root(nullptr)
-		{
-			for (auto it = str.begin(); it != str.end(); ++it)
-				hash_list[*it]++;//建立哈希表
-			std::priority_queue<HNode*>heap;
-			for (auto it = hash_list.begin(); it != hash_list.end(); ++it)
-				if (*it != 0)
-					heap.push(new HNode(*it, it - hash_list.begin()));//所有节点入堆
-			while (heap.size() != 1)
-			{
-				HNode* lt = heap.top();
-				heap.pop();
-				HNode* rt = heap.top();
-				heap.pop();
-				heap.push(new HNode(lt->weight() + rt->weight(), '\0', lt, rt));//选用两小造新树
-			}
-			root = heap.top();
-			
-		}
-	};
+	
 /*---------------------------------------------------------------------------------------------------------------
 * 
 *	四.测试用函数

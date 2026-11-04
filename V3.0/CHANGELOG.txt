@@ -119,6 +119,20 @@
 		vector的析构去掉了virtual(不再需要多态删除)
 		vector新增reverse(size_t n),按指定容量重新申请内存
 		(注意:它会析构全部元素但不重置Size,见README待改进)
+2026.11.4(第二轮)
+	reverse(size_t n)末尾补上了Size = 0,修掉了"销毁全部元素却仍声称有活对象"的未定义行为
+		(它的语义仍是一次清空,与reserve的保留元素不同,见README待改进)
+	移除了HuffmanTree类,原因是原实现的四个缺陷:
+		构造里hash_list尚未扩容就下标访问,Debug下断言直接触发,Release下是往空指针写
+		std::priority_queue<HNode*>用默认less比较的是地址而不是weight(),弹出的不是最小的两个
+		空串没有任何节点入堆,while(heap.size() != 1)依然成立,紧接着heap.top()作用在空容器上
+		没有析构函数,new出来的HNode与root都不会释放
+		另外它依赖了STL的std::priority_queue,与本项目"不依赖STL容器"的前提不一致
+	HNode保留在Tree.h里,它的friend class HuffmanTree仍指向一个已不存在的类,重写时一起处理
+	DeInthread从递归改为显式栈的迭代版,深树不再爆栈:
+		用ispush标记区分"该往左压栈"还是"刚出栈该处理当前节点"
+		压栈阶段只往左走;出栈阶段复位ltag/rtag并把lchild/rchild置空,再把右孩子压回去
+	两份README同步:模块表HuffmanTree改为"已移除,待重写";"reverse不重置Size"改为已修
 
 	
 	
